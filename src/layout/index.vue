@@ -42,7 +42,9 @@ function toggleCollapse() {
     <div class="layout-main">
       <Breadcrumb />
       <main class="layout-content">
-        <router-view />
+        <SsCard>
+          <router-view />
+        </SsCard>
       </main>
     </div>
   </div>

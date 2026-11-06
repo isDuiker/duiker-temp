@@ -1,9 +1,5 @@
-<script setup>
-import TCard from "@/components/TCard.vue";
-</script>
+<script setup></script>
 <template>
-  <TCard>
-    <div class="container">login</div>
-  </TCard>
+  <div class="container">login</div>
 </template>
 <style scoped lang="scss"></style>

@@ -1,6 +1,4 @@
 <script setup>
-import TCard from "@/components/TCard.vue";
-
 const dependencies = [
   { name: "vue", version: "^3.5.22", description: "渐进式 JavaScript 框架" },
   { name: "vite", version: "^7.1.7", description: "新一代前端构建工具" },
@@ -35,49 +33,47 @@ const devDependencies = [
 </script>
 
 <template>
-  <TCard>
-    <div class="about-container">
-      <div class="header-section">
-        <h2>关于项目</h2>
-        <p>
-          Vue Temp 是一个基于 Vue 3、Vite 和 Element Plus 的轻量级后台管理模板。
-          旨在提供简洁、高效的开发体验，内置了常用的功能模块和工程化配置。
-        </p>
-      </div>
-
-      <el-divider content-position="left">生产环境依赖</el-divider>
-
-      <el-descriptions border :column="3">
-        <el-descriptions-item
-          v-for="item in dependencies"
-          :key="item.name"
-          :label="item.name"
-          label-class-name="my-label"
-          class-name="my-content"
-        >
-          <el-tag size="small">{{ item.version }}</el-tag>
-          <div class="desc-text">{{ item.description }}</div>
-        </el-descriptions-item>
-      </el-descriptions>
-
-      <el-divider content-position="left">开发环境依赖</el-divider>
-
-      <el-descriptions border :column="3">
-        <el-descriptions-item
-          v-for="item in devDependencies"
-          :key="item.name"
-          :label="item.name"
-        >
-          <el-tag type="info" size="small">{{ item.version }}</el-tag>
-          <div class="desc-text">{{ item.description }}</div>
-        </el-descriptions-item>
-      </el-descriptions>
-
-      <div class="footer-info">
-        <p>Copyright © 2026 Vue Temp. All Rights Reserved.</p>
-      </div>
+  <div class="about-container">
+    <div class="header-section">
+      <h2>关于项目</h2>
+      <p>
+        Vue Temp 是一个基于 Vue 3、Vite 和 Element Plus 的轻量级后台管理模板。
+        旨在提供简洁、高效的开发体验，内置了常用的功能模块和工程化配置。
+      </p>
     </div>
-  </TCard>
+
+    <el-divider content-position="left">生产环境依赖</el-divider>
+
+    <el-descriptions border :column="3">
+      <el-descriptions-item
+        v-for="item in dependencies"
+        :key="item.name"
+        :label="item.name"
+        label-class-name="my-label"
+        class-name="my-content"
+      >
+        <el-tag size="small">{{ item.version }}</el-tag>
+        <div class="desc-text">{{ item.description }}</div>
+      </el-descriptions-item>
+    </el-descriptions>
+
+    <el-divider content-position="left">开发环境依赖</el-divider>
+
+    <el-descriptions border :column="3">
+      <el-descriptions-item
+        v-for="item in devDependencies"
+        :key="item.name"
+        :label="item.name"
+      >
+        <el-tag type="info" size="small">{{ item.version }}</el-tag>
+        <div class="desc-text">{{ item.description }}</div>
+      </el-descriptions-item>
+    </el-descriptions>
+
+    <div class="footer-info">
+      <p>Copyright © 2026 Vue Temp. All Rights Reserved.</p>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
