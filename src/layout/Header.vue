@@ -68,7 +68,7 @@ function handleUserCommand(command) {
 
       <div class="brand" @click="goHome">
         <!-- <img src="/favicon.svg" alt="logo" /> -->
-        <span>中后台快速开发模板</span>
+        <span>Quickly developed template</span>
       </div>
     </div>
 
@@ -117,8 +117,8 @@ function handleUserCommand(command) {
   min-width: 0;
   height: 50px;
   padding-right: 16px;
-  color: #fff;
-  background: #265fec;
+  color: var(--app-header-fg);
+  background: var(--app-header-bg);
   user-select: none;
 }
 
@@ -136,14 +136,14 @@ function handleUserCommand(command) {
   display: grid;
   place-items: center;
   padding: 0;
-  color: #fff;
+  color: var(--app-header-fg);
   background: transparent;
   border: 0;
   cursor: pointer;
   transition: background-color 0.15s;
 
   &:hover {
-    background: rgb(255 255 255 / 8%);
+    background: var(--app-header-hover);
   }
 }
 
@@ -181,7 +181,7 @@ function handleUserCommand(command) {
   display: grid;
   place-items: center;
   padding: 0;
-  color: #fff;
+  color: var(--app-header-fg);
   background: transparent;
   border: 0;
   border-radius: 4px;
@@ -189,7 +189,7 @@ function handleUserCommand(command) {
   transition: background-color 0.15s;
 
   &:hover {
-    background: rgb(255 255 255 / 10%);
+    background: var(--app-header-hover);
   }
 }
 
@@ -199,7 +199,7 @@ function handleUserCommand(command) {
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  color: #fff;
+  color: var(--app-header-fg);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -207,8 +207,8 @@ function handleUserCommand(command) {
   transition: background-color 0.15s;
 
   &:hover {
-    color: #fff;
-    background: rgb(255 255 255 / 10%);
+    color: var(--app-header-fg);
+    background: var(--app-header-hover);
   }
 }
 
@@ -219,17 +219,17 @@ function handleUserCommand(command) {
   gap: 6px;
   margin-left: 12px;
   padding: 0 8px 0 16px;
-  color: #fff;
+  color: var(--app-header-fg);
   font-size: 14px;
   white-space: nowrap;
   background: transparent;
   border: 0;
-  border-left: 1px solid rgb(255 255 255 / 22%);
+  border-left: 1px solid var(--app-header-border);
   cursor: pointer;
   transition: background-color 0.15s;
 
   &:hover {
-    background: rgb(255 255 255 / 10%);
+    background: var(--app-header-hover);
   }
 }
 

@@ -1,16 +1,26 @@
 <script setup>
-import { onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { useThemeStore } from "@/stores/theme";
+import { onBeforeUnmount, onMounted } from "vue";
+import { THEME_KEY, useThemeStore } from "@/stores/theme";
 
-const route = useRoute();
 const themeStore = useThemeStore();
 
-// 初始化主题
+// 初始化主题：优先使用上次保存的主题，否则跟随系统
 themeStore.initTheme();
 
+const mediaQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+function handleSystemThemeChange(event) {
+  // 用户手动选择过主题后，不再跟随系统
+  if (localStorage.getItem(THEME_KEY)) return;
+  themeStore.applyTheme(event.matches ? "dark" : "light", false);
+}
+
 onMounted(() => {
-  console.log("=========route==========", route);
+  mediaQuery?.addEventListener?.("change", handleSystemThemeChange);
+});
+
+onBeforeUnmount(() => {
+  mediaQuery?.removeEventListener?.("change", handleSystemThemeChange);
 });
 </script>
 
@@ -21,12 +31,9 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-@use "@/styles/theme.scss" as theme;
 .app-container {
-  @include theme.theme-bg;
-  @include theme.theme-text;
-  @include theme.theme-box-shadow;
-  @include theme.theme-border;
-  transition: background-color 0.3s;
+  color: var(--app-text);
+  background: var(--app-content-bg);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 </style>

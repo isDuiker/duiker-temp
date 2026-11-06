@@ -17,9 +17,9 @@ const breadcrumbItems = computed(() => {
   }));
 
   // 首页始终作为第一级
-  if (route.name !== "home") {
-    items.unshift({ title: "首页", path: "/home" });
-  }
+  // if (route.name !== "home") {
+    items.unshift({ title: "temp", path: "/home" });
+  // }
 
   return items;
 });
@@ -45,31 +45,31 @@ const breadcrumbItems = computed(() => {
   display: flex;
   align-items: center;
   padding: 0 16px;
-  background: var(--el-bg-color, #fff);
-  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+  background: var(--app-surface);
+  border-bottom: 1px solid var(--app-border);
 }
 
 :deep(.el-breadcrumb__inner) {
   display: inline;
-  color: var(--el-text-color-primary, #303133);
+  color: var(--app-text);
   font-weight: 600;
 }
 
 :deep(.el-breadcrumb__inner.is-link) {
-  color: var(--el-text-color-primary, #303133);
+  color: var(--app-text);
   font-weight: 600;
 
   &:hover {
-    color: var(--el-color-primary, #426ec4);
+    color: var(--el-color-primary, #265fec);
   }
 }
 
 :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
-  color: var(--el-text-color-secondary, #808080);
+  color: var(--app-text-secondary);
   font-weight: 400;
 }
 
 :deep(.el-breadcrumb__separator) {
-  color: var(--el-text-color-secondary, #808080);
+  color: var(--app-muted);
 }
 </style>

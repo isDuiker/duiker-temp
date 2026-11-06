@@ -4,7 +4,7 @@ import { useRoute } from "vue-router";
 import {
   Document,
   Grid,
-  House,
+  HomeFilled ,
   InfoFilled,
   Setting,
 } from "@element-plus/icons-vue";
@@ -22,7 +22,7 @@ const route = useRoute();
 
 // 菜单图标映射，按路由 name 配置，新增页面时在此补充即可
 const MENU_ICONS = {
-  home: House,
+  home: HomeFilled ,
   system: Setting,
   feature: Grid,
   about: InfoFilled,
@@ -79,24 +79,24 @@ function generateMenu(routes, depth = 0) {
   grid-area: sidebar;
   min-height: 0;
   overflow: hidden;
-  background: #e5ebfd;
-  border-right: 1px solid #d8e1fa;
+  background: var(--app-sidebar-bg);
+  border-right: 1px solid var(--app-sidebar-border);
 }
 
 .sidebar-menu {
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  background: #e5ebfd;
+  background: var(--app-sidebar-bg);
   border-right: 0;
-  scrollbar-color: rgb(38 95 236 / 25%) transparent;
+  scrollbar-color: var(--app-sidebar-scrollbar) transparent;
   scrollbar-width: thin;
 
-  --el-menu-bg-color: #e5ebfd;
-  --el-menu-text-color: #303133;
-  --el-menu-active-color: #265fec;
-  --el-menu-hover-text-color: #265fec;
-  --el-menu-hover-bg-color: #d8e1fa;
+  --el-menu-bg-color: var(--app-sidebar-bg);
+  --el-menu-text-color: var(--app-sidebar-text);
+  --el-menu-active-color: var(--app-sidebar-active-text);
+  --el-menu-hover-text-color: var(--app-sidebar-hover-text);
+  --el-menu-hover-bg-color: var(--app-sidebar-hover-bg);
   --el-menu-item-font-size: 15px;
 
   &::-webkit-scrollbar {
@@ -104,7 +104,7 @@ function generateMenu(routes, depth = 0) {
   }
 
   &::-webkit-scrollbar-thumb {
-    background: rgb(38 95 236 / 25%);
+    background: var(--app-sidebar-scrollbar);
     border-radius: 2px;
   }
 
@@ -123,18 +123,18 @@ function generateMenu(routes, depth = 0) {
     width: 20px;
     margin-right: 10px;
     font-size: 18px;
-    color: #63718a;
+    color: var(--app-sidebar-icon);
   }
 
   // 展开箭头靠右，并保持垂直居中
   :deep(.el-sub-menu__icon-arrow) {
     right: 14px;
     margin-top: -6px;
-    color: #63718a;
+    color: var(--app-sidebar-icon);
   }
 
   :deep(.el-sub-menu .el-menu) {
-    background: #d8e1fa;
+    background: var(--app-sidebar-sub-bg);
   }
 
   :deep(.el-sub-menu .el-menu-item),
@@ -142,7 +142,7 @@ function generateMenu(routes, depth = 0) {
     min-width: 0;
     height: 42px;
     padding-left: 52px !important;
-    color: #5c6b82;
+    color: var(--app-sidebar-muted);
     font-size: 14px;
     line-height: 42px;
   }
@@ -154,30 +154,34 @@ function generateMenu(routes, depth = 0) {
 
   :deep(.el-menu-item:hover),
   :deep(.el-sub-menu__title:hover) {
-    color: #265fec;
-    background: #d8e1fa;
+    color: var(--app-sidebar-hover-text);
+    background: var(--app-sidebar-hover-bg);
   }
 
   :deep(.el-menu-item.is-active) {
-    color: #265fec;
+    color: var(--app-sidebar-active-text);
     font-weight: 600;
-    background: #fff;
+    background: var(--app-sidebar-active-bg);
   }
 
   :deep(.el-menu-item.is-active .el-icon) {
-    color: #265fec;
+    color: var(--app-sidebar-active-text);
   }
 
   // 子菜单选中项只保留蓝色文字，不显示白色背景
   :deep(.el-sub-menu .el-menu-item.is-active) {
-    color: #265fec;
+    color: var(--app-sidebar-sub-active-text);
     font-weight: 600;
     background: transparent;
   }
 
   :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
-    color: #265fec;
-    background: #fff;
+    color: var(--app-sidebar-parent-active-text);
+    background: var(--app-sidebar-parent-active-bg);
+  }
+
+  :deep(.el-sub-menu.is-active > .el-sub-menu__title .el-icon) {
+    color: var(--app-sidebar-parent-active-text);
   }
 }
 
@@ -189,28 +193,28 @@ function generateMenu(routes, depth = 0) {
 <style lang="scss">
 /* 折叠状态下弹出的子菜单通过 teleport 挂载到 body，需要全局样式 */
 .sidebar-popper {
-  --el-menu-bg-color: #e5ebfd;
-  --el-menu-text-color: #303133;
-  --el-menu-hover-bg-color: #d8e1fa;
-  --el-menu-hover-text-color: #265fec;
-  --el-menu-active-color: #265fec;
+  --el-menu-bg-color: var(--app-sidebar-bg);
+  --el-menu-text-color: var(--app-sidebar-text);
+  --el-menu-hover-bg-color: var(--app-sidebar-hover-bg);
+  --el-menu-hover-text-color: var(--app-sidebar-hover-text);
+  --el-menu-active-color: var(--app-sidebar-sub-active-text);
 
   .el-menu--popup {
-    background: #e5ebfd;
+    background: var(--app-sidebar-bg);
   }
 
   .el-menu-item {
     height: 42px;
     line-height: 42px;
-    color: #303133;
+    color: var(--app-sidebar-text);
 
     &:hover {
-      color: #265fec;
-      background: #d8e1fa;
+      color: var(--app-sidebar-hover-text);
+      background: var(--app-sidebar-hover-bg);
     }
 
     &.is-active {
-      color: #265fec;
+      color: var(--app-sidebar-sub-active-text);
       font-weight: 600;
       background: transparent;
     }

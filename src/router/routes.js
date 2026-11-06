@@ -37,7 +37,7 @@ export const STATIC_ROUTES = [
           {
             path: "/feature/table",
             name: "table",
-            meta: { title: "综合表格" },
+            meta: { title: "通用表格" },
             component: () => import("@/views/feature/table/index.vue"),
           },
           {

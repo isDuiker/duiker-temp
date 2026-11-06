@@ -52,8 +52,6 @@ import TCard from "@/components/TCard.vue";
 </template>
 
 <style scoped lang="scss">
-@use "@/styles/mixins.scss" as mixins;
-
 .home-container {
   padding: 20px;
   text-align: center;
@@ -83,10 +81,10 @@ import TCard from "@/components/TCard.vue";
   .feature-item {
     width: 250px;
     padding: 20px;
+    background: var(--el-fill-color-lighter);
+    border: 1px solid var(--app-border);
     border-radius: 8px;
-    transition: transform 0.3s;
-    border: 1px solid;
-    @include mixins.theme-border;
+    transition: transform 0.3s, border-color 0.25s, background-color 0.25s;
 
     &:hover {
       transform: translateY(-5px);

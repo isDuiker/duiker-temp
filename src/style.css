@@ -1,5 +1,112 @@
 @import "tailwindcss";
 
+/* =========================
+   主题变量：明亮 / 暗黑
+   ========================= */
+html:root {
+  color-scheme: light;
+
+  /* 顶部栏 */
+  --app-header-bg: #265fec;
+  --app-header-fg: #ffffff;
+  --app-header-hover: rgb(255 255 255 / 10%);
+  --app-header-border: rgb(255 255 255 / 22%);
+
+  /* 侧边栏 */
+  --app-sidebar-bg: #e5ebfd;
+  --app-sidebar-sub-bg: #d8e1fa;
+  --app-sidebar-border: #d8e1fa;
+  --app-sidebar-text: #303133;
+  --app-sidebar-muted: #5c6b82;
+  --app-sidebar-icon: #63718a;
+  --app-sidebar-hover-bg: #d8e1fa;
+  --app-sidebar-hover-text: #265fec;
+  --app-sidebar-active-bg: #ffffff;
+  --app-sidebar-active-text: #265fec;
+  --app-sidebar-sub-active-text: #265fec;
+  --app-sidebar-parent-active-bg: #ffffff;
+  --app-sidebar-parent-active-text: #265fec;
+  --app-sidebar-scrollbar: rgb(38 95 236 / 25%);
+
+  /* 内容区域 */
+  --app-content-bg: #f5f7fa;
+  --app-surface: #ffffff;
+  --app-border: #e5e9f2;
+  --app-text: #303133;
+  --app-text-secondary: #606266;
+  --app-muted: #909399;
+  --app-shadow: 0 1px 3px rgb(46 70 105 / 6%);
+
+  /* Element Plus 主色，与项目品牌色保持一致 */
+  --el-color-primary: #265fec;
+  --el-color-primary-light-3: #678ff2;
+  --el-color-primary-light-5: #92aff6;
+  --el-color-primary-light-7: #becff9;
+  --el-color-primary-light-8: #d4dffb;
+  --el-color-primary-light-9: #e9effd;
+  --el-color-primary-dark-2: #1e4cbd;
+}
+
+html.dark[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* 顶部栏暗色适配 */
+  --app-header-bg: #1e3a8a;
+  --app-header-fg: #f5f8ff;
+  --app-header-hover: rgb(255 255 255 / 10%);
+  --app-header-border: rgb(255 255 255 / 18%);
+
+  /* 暗色侧边栏 */
+  --app-sidebar-bg: #131a27;
+  --app-sidebar-sub-bg: #1a2232;
+  --app-sidebar-border: #232c3f;
+  --app-sidebar-text: #dbe3f5;
+  --app-sidebar-muted: #98a4ba;
+  --app-sidebar-icon: #8b99b7;
+  --app-sidebar-hover-bg: #202a3e;
+  --app-sidebar-hover-text: #ffffff;
+  --app-sidebar-active-bg: #3f5de9;
+  --app-sidebar-active-text: #ffffff;
+  --app-sidebar-sub-active-text: #8db0ff;
+  --app-sidebar-parent-active-bg: #3f5de9;
+  --app-sidebar-parent-active-text: #ffffff;
+  --app-sidebar-scrollbar: rgb(141 176 255 / 30%);
+
+  /* 暗色内容区域 */
+  --app-content-bg: #0d1117;
+  --app-surface: #161b25;
+  --app-border: #283041;
+  --app-text: #e6ebf5;
+  --app-text-secondary: #c9d1e0;
+  --app-muted: #98a4ba;
+  --app-shadow: 0 1px 3px rgb(0 0 0 / 24%);
+
+  /* Element Plus 暗色变量，和项目暗色面板保持一致 */
+  --el-bg-color-page: #0d1117;
+  --el-bg-color: #161b25;
+  --el-bg-color-overlay: #1a2030;
+  --el-border-color: #30394b;
+  --el-border-color-light: #283041;
+  --el-border-color-lighter: #232a38;
+  --el-border-color-extra-light: #1e2533;
+  --el-text-color-primary: #e6ebf5;
+  --el-text-color-regular: #c9d1e0;
+  --el-text-color-secondary: #98a4ba;
+  --el-text-color-placeholder: #6f7b90;
+  --el-fill-color-blank: #161b25;
+  --el-fill-color-light: #1b2230;
+  --el-fill-color-lighter: #171d29;
+  --el-fill-color-extra-light: #141a24;
+
+  --el-color-primary: #265fec;
+  --el-color-primary-light-3: #1f4fc6;
+  --el-color-primary-light-5: #1a429f;
+  --el-color-primary-light-7: #15316f;
+  --el-color-primary-light-8: #122850;
+  --el-color-primary-light-9: #0f1d38;
+  --el-color-primary-dark-2: #5a83f1;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -19,9 +126,10 @@ body {
   font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", SimSun, sans-serif;
   font-size: 14px;
-  color: var(--el-text-color-regular, #606266);
-  background: var(--el-bg-color-page, #f8f8f8);
+  color: var(--app-text-secondary);
+  background: var(--app-content-bg);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 button,
@@ -29,4 +137,16 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+/* 主题切换时统一颜色过渡 */
+.header,
+.sidebar,
+.sidebar-menu,
+.page-trail,
+.layout,
+.layout-content,
+.card {
+  transition: background-color 0.25s ease, color 0.25s ease,
+    border-color 0.25s ease, box-shadow 0.25s ease;
 }

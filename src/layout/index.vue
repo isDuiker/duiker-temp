@@ -58,7 +58,7 @@ function toggleCollapse() {
     "sidebar main";
   height: 100vh;
   overflow: hidden;
-  background: var(--el-bg-color-page, #f8f8f8);
+  background: var(--app-content-bg);
   transition: grid-template-columns 0.2s ease;
 }
 
@@ -80,7 +80,7 @@ function toggleCollapse() {
   min-height: 0;
   padding: 12px;
   overflow: auto;
-  background: var(--el-bg-color-page, #f8f8f8);
+  background: var(--app-content-bg);
 }
 
 @media (max-width: 720px) {
