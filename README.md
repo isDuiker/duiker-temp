@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-vue-temp 是基于 Vue 3 搭建的前端模板项目，旨在快速搭建前端项目。采用现代化的前端技术栈，具备良好的可扩展性。
+duiker-temp 是基于 Vue 3 搭建的前端模板项目，旨在快速搭建前端项目。采用现代化的前端技术栈，具备良好的可扩展性。
 
 ## 技术栈
 
@@ -17,7 +17,7 @@ vue-temp 是基于 Vue 3 搭建的前端模板项目，旨在快速搭建前端�
 ## 项目结构
 
 ```
-vue-temp/
+duiker-temp/
 ├── src/                          # 源代码目录
 │   ├── api/                      # API接口定义
 │   ├── assets/                   # 静态资源
@@ -49,8 +49,8 @@ vue-temp/
 1. **克隆项目**
 
 ```bash
-git clone http://github.com/isDuiker/vue-temp.git
-cd vue-temp
+git clone http://github.com/isDuiker/duiker-temp.git
+cd duiker-temp
 ```
 
 2. **安装依赖**
