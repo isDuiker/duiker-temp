@@ -42,9 +42,15 @@ function toggleCollapse() {
     <div class="layout-main">
       <Breadcrumb />
       <main class="layout-content">
-        <SsCard>
-          <router-view />
-        </SsCard>
+        <router-view v-slot="{ Component, route }">
+          <transition name="page-card" mode="out-in" appear>
+            <div :key="route.path" class="page-card-wrapper">
+              <SsCard>
+                <component :is="Component" />
+              </SsCard>
+            </div>
+          </transition>
+        </router-view>
       </main>
     </div>
   </div>
@@ -83,6 +89,36 @@ function toggleCollapse() {
   padding: 12px;
   overflow: auto;
   background: var(--app-content-bg);
+}
+
+.page-card-wrapper {
+  height: 100%;
+}
+
+/* 页面切换时中间卡片的进入 / 离开动画 */
+.page-card-enter-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.page-card-leave-active {
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.page-card-enter-from {
+  opacity: 0;
+  transform: translateX(8px) scale(0.995);
+}
+
+.page-card-leave-to {
+  opacity: 0;
+  transform: translateX(-4px) scale(0.995);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-card-enter-active,
+  .page-card-leave-active {
+    transition: none;
+  }
 }
 
 @media (max-width: 720px) {
