@@ -1,8 +1,8 @@
 /**
- * 全局注册 SSComponents 文件夹中的组件
+ * 全局注册 DComponent 文件夹中的组件
  * @param {import('vue').App} app - Vue 3 应用实例
  */
-export function registerSSComponents(app) {
+export function registerDComponents(app) {
   // Vite 使用 import.meta.glob 替代 require.context
   const modules = import.meta.glob("./**/*.vue", {
     eager: true,

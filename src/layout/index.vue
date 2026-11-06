@@ -45,9 +45,9 @@ function toggleCollapse() {
         <router-view v-slot="{ Component, route }">
           <transition name="page-card" mode="out-in" appear>
             <div :key="route.path" class="page-card-wrapper">
-              <SsCard>
+              <d-card>
                 <component :is="Component" />
-              </SsCard>
+              </d-card>
             </div>
           </transition>
         </router-view>

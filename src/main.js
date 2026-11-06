@@ -5,12 +5,12 @@ import website from "@/config/website";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import "./style.css";
 import "element-plus/theme-chalk/dark/css-vars.css";
-import { registerSSComponents } from '@/components/SSComponents'
+import { registerDComponents } from '@/components/DComponent'
 import App from "./App.vue";
 
 const pinia = createPinia();
 const app = createApp(App);
-registerSSComponents(app)
+registerDComponents(app)
 app.config.globalProperties.website = website; // 全局注册
 app.use(router);
 app.use(pinia);
