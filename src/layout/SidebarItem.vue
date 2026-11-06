@@ -1,17 +1,22 @@
 <template>
-  <template v-if="!item.children || item.children.length === 0">
-    <el-menu-item :index="item.path">
-      <template #title>
-        <span>{{ item.title }}</span>
-      </template>
-    </el-menu-item>
-  </template>
-
-  <el-sub-menu v-else :index="item.path || item.title">
+  <el-menu-item v-if="!item.children?.length" :index="item.path">
+    <el-icon v-if="item.icon">
+      <component :is="item.icon" />
+    </el-icon>
     <template #title>
       <span>{{ item.title }}</span>
     </template>
-    <sidebar-item
+  </el-menu-item>
+
+  <el-sub-menu v-else :index="item.path || item.title" popper-class="sidebar-popper">
+    <template #title>
+      <el-icon v-if="item.icon">
+        <component :is="item.icon" />
+      </el-icon>
+      <span>{{ item.title }}</span>
+    </template>
+
+    <SidebarItem
       v-for="child in item.children"
       :key="child.path"
       :item="child"

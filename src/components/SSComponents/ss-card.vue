@@ -9,10 +9,11 @@
 
 .card {
   height: 100%;
+  padding: 12px;
+  background: var(--el-bg-color, #fff);
   border: 1px solid;
   @include mixins.theme-border;
-  border-radius: 8px;
-  box-shadow: 0 0 2px 0;
-  padding: 12px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgb(46 70 105 / 6%);
 }
 </style>

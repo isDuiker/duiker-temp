@@ -20,18 +20,33 @@ export const STATIC_ROUTES = [
           import(/* webpackChunkName: "views" */ "@/views/home/index.vue"),
       },
       {
-        path: "/about",
-        name: "about",
-        meta: { title: "关于项目" },
-        component: () =>
-          import(/* webpackChunkName: "views" */ "@/views/about/index.vue"),
-      },
-      {
         path: "/login",
         name: "login",
         meta: { title: "登录页面", hidden: true, noLogin: true },
         component: () =>
           import(/* webpackChunkName: "views" */ "@/views/login/index.vue"),
+      },
+      // 通用组件
+      {
+        path: "/feature",
+        name: "feature",
+        component: RouterView,
+        redirect: "/feature/table",
+        meta: { title: "通用组件" },
+        children: [
+          {
+            path: "/feature/table",
+            name: "table",
+            meta: { title: "综合表格" },
+            component: () => import("@/views/feature/table/index.vue"),
+          },
+          {
+            path: "/feature/form",
+            name: "form",
+            meta: { title: "复杂表单" },
+            component: () => import("@/views/feature/form/index.vue"),
+          },
+        ],
       },
       // 系统管理
       {
@@ -61,27 +76,12 @@ export const STATIC_ROUTES = [
           },
         ],
       },
-      // 功能组件
       {
-        path: "/feature",
-        name: "feature",
-        component: RouterView,
-        redirect: "/feature/table",
-        meta: { title: "功能组件" },
-        children: [
-          {
-            path: "/feature/table",
-            name: "table",
-            meta: { title: "综合表格" },
-            component: () => import("@/views/feature/table/index.vue"),
-          },
-          {
-            path: "/feature/form",
-            name: "form",
-            meta: { title: "复杂表单" },
-            component: () => import("@/views/feature/form/index.vue"),
-          },
-        ],
+        path: "/about",
+        name: "about",
+        meta: { title: "关于项目" },
+        component: () =>
+          import(/* webpackChunkName: "views" */ "@/views/about/index.vue"),
       },
       // 测试页面
       {

@@ -1,26 +1,24 @@
 // 集中管理主题状态并同步到DOM属性
 import { defineStore } from "pinia";
+
+const THEME_KEY = "theme";
+
 export const useThemeStore = defineStore("theme", {
   state: () => ({
-    currentTheme: "dark",
+    currentTheme: localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light",
   }),
   actions: {
     initTheme() {
-      document.documentElement.setAttribute("data-theme", this.currentTheme);
-      if (this.currentTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      this.applyTheme(this.currentTheme);
     },
     toggleTheme() {
-      this.currentTheme = this.currentTheme === "light" ? "dark" : "light";
-      document.documentElement.setAttribute("data-theme", this.currentTheme);
-      if (this.currentTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
+      this.applyTheme(this.currentTheme === "light" ? "dark" : "light");
+    },
+    applyTheme(theme) {
+      this.currentTheme = theme;
+      document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.classList.toggle("dark", theme === "dark");
+      localStorage.setItem(THEME_KEY, theme);
     },
   },
 });
