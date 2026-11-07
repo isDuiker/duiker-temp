@@ -346,10 +346,6 @@ defineExpose({
   margin-bottom: 8px;
 }
 
-:deep(.query-content-wrapper > .el-form-item:last-child) {
-  margin-bottom: 0;
-}
-
 /* 操作按钮所在表单项参与行内垂直居中，不保留底部外边距 */
 :deep(.search-form > .el-form-item) {
   margin-bottom: 0;

@@ -12,14 +12,12 @@
       <el-input v-model="query.code" placeholder="请输入编码" />
     </el-form-item>
     <el-form-item label="状态">
-      <el-select
+      <d-query-select
         v-model="query.status"
+        :option-list="statusOptions"
         placeholder="请选择状态"
         style="width: 200px"
-      >
-        <el-option label="启用" value="enabled" />
-        <el-option label="停用" value="disabled" />
-      </el-select>
+      />
     </el-form-item>
     <el-form-item label="负责人">
       <el-input v-model="query.owner" placeholder="请输入负责人" />
@@ -128,10 +126,11 @@
         <el-input v-model="deviceForm.owner" placeholder="请输入负责人" />
       </el-form-item>
       <el-form-item label="状态" prop="status">
-        <el-select v-model="deviceForm.status" style="width: 100%">
-          <el-option label="启用" value="enabled" />
-          <el-option label="停用" value="disabled" />
-        </el-select>
+        <d-query-select
+          v-model="deviceForm.status"
+          :option-list="statusOptions"
+          :clearable="false"
+        />
       </el-form-item>
       <el-form-item label="备注" prop="remark">
         <el-input
@@ -211,6 +210,11 @@ const statusMap = {
   enabled: "启用",
   disabled: "停用",
 };
+
+const statusOptions = [
+  { label: "启用", value: "enabled" },
+  { label: "停用", value: "disabled" },
+];
 
 function statusLabel(status) {
   return statusMap[status] || "-";

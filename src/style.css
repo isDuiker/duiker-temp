@@ -139,6 +139,14 @@ select {
   font: inherit;
 }
 
+/*
+ * Element Plus 默认给表单项内容设置了 32px 行高，
+ * 会让自定义下拉等内容多出约 1px 高度，导致表单项高度不一致。
+ */
+.el-form-item__content {
+  line-height: normal !important;
+}
+
 /* 主题切换时统一颜色过渡 */
 .header,
 .sidebar,
