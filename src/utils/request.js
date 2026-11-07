@@ -130,3 +130,34 @@ function handleUnauthorized() {
 
 export { baseURL, TOKEN_KEY };
 export default request;
+
+/**
+ * 下载文件
+ * @param {string} url 下载地址
+ * @param {Object} params 查询参数
+ * @param {string} filename 保存的文件名，为空时使用地址中的最后一段
+ */
+export async function downloadFile(url, params = {}, filename = "") {
+  const blob = await request.get(url, {
+    params,
+    responseType: "blob",
+  });
+  const fileBlob = blob instanceof Blob ? blob : new Blob([blob]);
+
+  if (!fileBlob.size) {
+    throw new Error("下载文件为空");
+  }
+
+  const objectUrl = URL.createObjectURL(fileBlob);
+  const link = document.createElement("a");
+  const fallbackName = url.split("?")[0].split("/").filter(Boolean).pop();
+
+  link.href = objectUrl;
+  link.download = filename || fallbackName || "download";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+
+  return true;
+}

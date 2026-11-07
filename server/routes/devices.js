@@ -1,4 +1,5 @@
 const express = require("express");
+const XLSX = require("xlsx");
 
 const router = express.Router();
 
@@ -82,6 +83,192 @@ function filterAndSort(query) {
     return 0;
   });
 }
+
+function normalizeStatus(value) {
+  const text = String(value ?? "").trim().toLowerCase();
+  return ["停用", "disabled", "0", "false"].includes(text)
+    ? "disabled"
+    : "enabled";
+}
+
+function padNumber(value) {
+  return String(value).padStart(2, "0");
+}
+
+function normalizeDate(value) {
+  if (!value) return new Date().toISOString().slice(0, 10);
+
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  if (typeof value === "number") {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (parsed) {
+      return `${parsed.y}-${padNumber(parsed.m)}-${padNumber(parsed.d)}`;
+    }
+  }
+
+  const text = String(value).trim();
+  const date = new Date(text.replace(/\//g, "-"));
+  return Number.isNaN(date.getTime()) ? text : date.toISOString().slice(0, 10);
+}
+
+function getRowValue(row, names) {
+  for (const name of names) {
+    if (row[name] !== undefined && row[name] !== null && row[name] !== "") {
+      return row[name];
+    }
+  }
+  return "";
+}
+
+function parseImportBuffer(buffer) {
+  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+  const sheetName = workbook.SheetNames[0];
+
+  if (!sheetName) return [];
+
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+  return rows
+    .map((row) => {
+      const name = String(getRowValue(row, ["设备名称", "name"])).trim();
+      const code = String(getRowValue(row, ["设备编码", "code"])).trim();
+
+      return {
+        name: name || code,
+        code,
+        status: normalizeStatus(getRowValue(row, ["状态", "status"])),
+        owner: String(getRowValue(row, ["负责人", "owner"]) || "未知").trim(),
+        date: normalizeDate(getRowValue(row, ["创建日期", "date"])),
+        remark: String(getRowValue(row, ["备注", "remark"])).trim(),
+      };
+    })
+    .filter((row) => row.name || row.code);
+}
+
+function parseMultipartFile(req) {
+  const contentType = req.headers["content-type"] || "";
+  const match = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = match && (match[1] || match[2]);
+
+  if (!boundary || !Buffer.isBuffer(req.body)) return null;
+
+  const raw = req.body;
+  const boundaryBuffer = Buffer.from(`--${boundary}`);
+  let start = raw.indexOf(boundaryBuffer);
+
+  while (start !== -1) {
+    let headerStart = start + boundaryBuffer.length;
+
+    if (raw[headerStart] === 13 && raw[headerStart + 1] === 10) {
+      headerStart += 2;
+    }
+
+    // 最后一个边界
+    if (raw[headerStart] === 45 && raw[headerStart + 1] === 45) {
+      break;
+    }
+
+    const headerEnd = raw.indexOf(Buffer.from("\r\n\r\n"), headerStart);
+    if (headerEnd === -1) break;
+
+    const headers = raw.toString("utf8", headerStart, headerEnd);
+    const contentStart = headerEnd + 4;
+    const nextBoundary = raw.indexOf(boundaryBuffer, contentStart);
+    if (nextBoundary === -1) break;
+
+    let contentEnd = nextBoundary;
+    if (raw[contentEnd - 2] === 13 && raw[contentEnd - 1] === 10) {
+      contentEnd -= 2;
+    }
+
+    if (/name="file"/i.test(headers)) {
+      return raw.subarray(contentStart, contentEnd);
+    }
+
+    start = nextBoundary;
+  }
+
+  return null;
+}
+
+// 导出设备 Excel
+router.get("/export", (req, res) => {
+  const rows = filterAndSort(req.query);
+  const data = rows.map((device, index) => ({
+    序号: index + 1,
+    设备名称: device.name,
+    设备编码: device.code,
+    状态: device.status === "enabled" ? "启用" : "停用",
+    负责人: device.owner,
+    创建日期: device.date,
+    备注: device.remark,
+  }));
+
+  const sheet = XLSX.utils.json_to_sheet(data);
+  sheet["!cols"] = [
+    { wch: 8 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 28 },
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "设备列表");
+
+  const buffer = XLSX.write(workbook, {
+    type: "buffer",
+    bookType: "xlsx",
+  });
+
+  res.attachment("devices.xlsx");
+  res.type(
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.send(buffer);
+});
+
+// 导入设备 Excel
+router.post("/import", (req, res) => {
+  const content = parseMultipartFile(req);
+
+  if (content === null) {
+    res.status(400).json({ message: "请选择要导入的文件" });
+    return;
+  }
+
+  let imported = [];
+
+  try {
+    imported = parseImportBuffer(content);
+  } catch (error) {
+    res.status(400).json({ message: "文件解析失败，请上传有效的 Excel 文件" });
+    return;
+  }
+
+  if (!imported.length) {
+    res.status(400).json({ message: "未解析到有效的设备数据" });
+    return;
+  }
+
+  let nextId = devices.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+  const newDevices = imported.map((item) => {
+    const device = { id: nextId, ...item };
+    nextId += 1;
+    return device;
+  });
+
+  devices.unshift(...newDevices);
+  res.json({ imported: newDevices.length, total: devices.length });
+});
+
+
 
 // 分页查询设备列表
 router.get("/", (req, res) => {

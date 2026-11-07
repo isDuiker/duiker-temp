@@ -18,6 +18,23 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+// Express 4.16 没有 express.raw，这里手动收集 multipart 原始内容供导入接口解析
+app.use(function(req, res, next) {
+  if (!req.is('multipart/form-data')) {
+    next();
+    return;
+  }
+
+  var chunks = [];
+  req.on('data', function(chunk) {
+    chunks.push(chunk);
+  });
+  req.on('end', function() {
+    req.body = Buffer.concat(chunks);
+    next();
+  });
+  req.on('error', next);
+});
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 

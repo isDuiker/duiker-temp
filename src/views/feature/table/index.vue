@@ -66,8 +66,23 @@
       >
         删除
       </el-button>
-      <el-button :icon="Upload" @click="handleImport">导入</el-button>
-      <el-button :icon="Download" @click="handleExport">导出</el-button>
+      <d-import
+        url="/devices/import"
+        :params="query"
+        @success="handleImportSuccess"
+      >
+        <el-icon><Upload /></el-icon>
+        导入
+      </d-import>
+      <d-export
+        url="/devices/export"
+        :params="query"
+        filename="设备列表.xlsx"
+        @success="handleExportSuccess"
+      >
+        <el-icon><Download /></el-icon>
+        导出
+      </d-export>
     </template>
 
     <template #status="{ row }">
@@ -375,12 +390,12 @@ async function confirmDelete() {
   }
 }
 
-function handleImport() {
-  ElMessage.info("导入按钮示例：可接入文件上传逻辑");
+function handleImportSuccess() {
+  tableRef.value?.loadTableData();
 }
 
-function handleExport() {
-  ElMessage.info("导出按钮示例：可接入导出接口");
+function handleExportSuccess() {
+  ElMessage.success("导出成功");
 }
 </script>
 
