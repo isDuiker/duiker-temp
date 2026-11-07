@@ -214,7 +214,7 @@ import {
 import { ElLoading, ElMessage } from "element-plus";
 import "element-plus/es/components/message/style/css";
 import "element-plus/es/components/loading/style/css";
-import { QUERYBOX_RESIZE_EVENT } from "./layoutEvents";
+import { QUERYBOX_RESIZE_EVENT } from "./index";
 
 defineOptions({
   name: "d-table",

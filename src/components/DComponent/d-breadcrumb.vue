@@ -2,6 +2,10 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 
+defineOptions({
+  name: "d-breadcrumb",
+});
+
 const route = useRoute();
 
 const breadcrumbItems = computed(() => {
@@ -17,9 +21,7 @@ const breadcrumbItems = computed(() => {
   }));
 
   // 首页始终作为第一级
-  // if (route.name !== "home") {
-    items.unshift({ title: "temp", path: "/home" });
-  // }
+  items.unshift({ title: "temp", path: "/home" });
 
   return items;
 });

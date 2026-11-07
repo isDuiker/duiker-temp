@@ -64,7 +64,7 @@ import {
 } from "vue";
 import { ArrowDown, ArrowUp } from "@element-plus/icons-vue";
 import { ElInput } from "element-plus";
-import { QUERYBOX_RESIZE_EVENT } from "./layoutEvents";
+import { QUERYBOX_RESIZE_EVENT } from "./index";
 
 defineOptions({
   name: "d-querybox",

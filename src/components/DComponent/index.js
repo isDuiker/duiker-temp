@@ -1,3 +1,6 @@
+// 布局类组件之间的轻量事件名
+export const QUERYBOX_RESIZE_EVENT = "d-querybox:resize";
+
 /**
  * 全局注册 DComponent 文件夹中的组件
  * @param {import('vue').App} app - Vue 3 应用实例

@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import Header from "./Header.vue";
 import Sidebar from "./Sidebar.vue";
-import Breadcrumb from "./Breadcrumb.vue";
 
 const COLLAPSE_KEY = "layout-collapsed";
 const savedCollapsed = localStorage.getItem(COLLAPSE_KEY);
@@ -40,7 +39,7 @@ function toggleCollapse() {
     <Header :collapsed="menuCollapsed" @toggle="toggleCollapse" />
     <Sidebar :collapsed="menuCollapsed" />
     <div class="layout-main">
-      <Breadcrumb />
+      <d-breadcrumb />
       <main class="layout-content">
         <router-view v-slot="{ Component, route }">
           <transition name="page-card" mode="out-in" appear>
