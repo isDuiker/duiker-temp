@@ -1,11 +1,12 @@
 <template>
-  <div class="d-table">
+  <div class="d-table" :class="{ 'is-row-clickable': rowClickSelect }">
     <div v-if="showHeader" class="d-table__header">
       <div class="d-table__header-left">
         <slot name="top-left" />
       </div>
 
       <div class="d-table__header-right">
+        <slot name="toolbar" />
         <slot name="top-right" />
 
         <el-popover
@@ -34,7 +35,10 @@
                 :key="column.prop"
                 class="d-table-column-panel__item"
               >
-                <el-checkbox v-model="column.hide" @change="onColumnChange">
+                <el-checkbox
+                  :model-value="!column.hide"
+                  @change="onColumnVisibilityChange(column, $event)"
+                >
                   {{ column.label }}
                 </el-checkbox>
 
@@ -70,6 +74,8 @@
         :row-key="rowKey"
         :height="tableHeight"
         style="width: 100%"
+        @row-click="handleRowClick"
+        @select="handleSelect"
         @selection-change="handleSelectionChange"
         @sort-change="onSortChange"
       >
@@ -90,8 +96,8 @@
         <el-table-column
           v-if="showIndex"
           type="index"
-          label="#"
-          width="60"
+          label="序号"
+          width="55"
           align="center"
           :index="getRowIndex"
         />
@@ -106,7 +112,8 @@
             <div
               v-if="isSortable(item)"
               class="d-table__sort-header"
-              :style="{ justifyContent: alignToFlex(column.align) }"
+              :class="{ 'is-center': getColumnAlign(item) === 'center' }"
+              :style="{ justifyContent: alignToFlex(getColumnAlign(item)) }"
               @click.stop="handleManualSort(item)"
             >
               <span class="d-table__sort-label">{{ column.label }}</span>
@@ -215,6 +222,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  rowClickSelect: {
+    type: Boolean,
+    default: true,
+  },
   showExpand: {
     type: Boolean,
     default: false,
@@ -263,6 +274,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  defaultAlign: {
+    type: String,
+    default: "center",
+  },
   pageSize: {
     type: Number,
     default: 50,
@@ -302,6 +317,7 @@ const currentPage = ref(1);
 const currentPageSize = ref(props.pageSize);
 const tableHeight = ref("auto");
 const selectedRows = ref([]);
+const lastClickedIndex = ref(-1);
 const sortMap = ref({});
 const columnPanelVisible = ref(false);
 
@@ -436,7 +452,8 @@ function saveColumnConfig() {
   }
 }
 
-function onColumnChange() {
+function onColumnVisibilityChange(column, visible) {
+  column.hide = !visible;
   saveColumnConfig();
   nextTick(() => tableRef.value?.doLayout());
 }
@@ -477,6 +494,7 @@ function getColumnProps(item) {
 
   return {
     ...columnProps,
+    align: columnProps.align ?? props.defaultAlign,
     sortable: false,
   };
 }
@@ -493,6 +511,10 @@ function formatCell(item, row) {
 
 function isSortable(item) {
   return !!props.sortable && !!item.sortable;
+}
+
+function getColumnAlign(item) {
+  return item.align || props.defaultAlign || "left";
 }
 
 function alignToFlex(align) {
@@ -561,11 +583,63 @@ function handleSelectionChange(rows) {
   emit("selection-change", rows);
 }
 
+function isRowSelected(row) {
+  const key = row?.[props.rowKey];
+  return selectedRows.value.some((item) => item?.[props.rowKey] === key);
+}
+
+function handleSelect(_selection, row) {
+  const index = tableData.value.findIndex(
+    (item) => item?.[props.rowKey] === row?.[props.rowKey]
+  );
+  if (index >= 0) {
+    lastClickedIndex.value = index;
+  }
+}
+
+function handleRowClick(row, column, event) {
+  if (!props.rowClickSelect) return;
+
+  // 点击行内按钮、输入框、复选框等交互元素时不触发行选中
+  const interactiveSelector =
+    "button, a, input, textarea, select, .el-button, .el-checkbox, .el-radio, .el-switch, .el-input, .el-select, .el-table__expand-icon";
+  if (event?.target?.closest?.(interactiveSelector)) return;
+
+  const currentIndex = tableData.value.findIndex(
+    (item) => item?.[props.rowKey] === row?.[props.rowKey]
+  );
+
+  if (props.selection) {
+    // Shift 点击：按上一次点击位置批量选中/取消选中
+    if (event?.shiftKey && lastClickedIndex.value >= 0 && currentIndex >= 0) {
+      const start = Math.min(lastClickedIndex.value, currentIndex);
+      const end = Math.max(lastClickedIndex.value, currentIndex);
+      const shouldSelect = !isRowSelected(row);
+
+      tableData.value.slice(start, end + 1).forEach((item) => {
+        tableRef.value?.toggleRowSelection?.(item, shouldSelect);
+      });
+
+      lastClickedIndex.value = currentIndex;
+      return;
+    }
+
+    tableRef.value?.toggleRowSelection?.(row);
+    if (currentIndex >= 0) {
+      lastClickedIndex.value = currentIndex;
+    }
+    return;
+  }
+
+  tableRef.value?.setCurrentRow?.(row);
+}
+
 async function loadTableData(resetPage = true) {
   if (resetPage) {
     currentPage.value = 1;
   }
 
+  lastClickedIndex.value = -1;
   loading.value = true;
 
   try {
@@ -642,6 +716,7 @@ function clearTable() {
   total.value = 0;
   currentPage.value = 1;
   selectedRows.value = [];
+  lastClickedIndex.value = -1;
   sortMap.value = {};
 
   tableRef.value?.clearSelection?.();
@@ -743,6 +818,7 @@ defineExpose({
   justify-content: space-between;
   gap: 12px;
   min-height: 32px;
+  flex-wrap: wrap;
 }
 
 .d-table__header-left,
@@ -751,6 +827,11 @@ defineExpose({
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+
+.d-table__header-right {
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .d-table__body {
@@ -774,7 +855,14 @@ defineExpose({
   min-width: 0;
 }
 
+.d-table.is-row-clickable {
+  :deep(.el-table__body tr) {
+    cursor: pointer;
+  }
+}
+
 .d-table__sort-header {
+  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
@@ -782,6 +870,20 @@ defineExpose({
   gap: 6px;
   cursor: pointer;
   user-select: none;
+}
+
+/* 居中列：左侧补一个与排序图标等宽的占位，保证文字居中且图标紧挨文字 */
+.d-table__sort-header.is-center {
+  &::before {
+    width: 10px;
+    flex: 0 0 10px;
+    content: "";
+  }
+
+  .d-table__sort-carets {
+    width: 10px;
+    flex: 0 0 10px;
+  }
 }
 
 .d-table__sort-label {
@@ -869,6 +971,7 @@ defineExpose({
 
   .el-table__cell {
     padding: 9px 0;
+    vertical-align: middle;
   }
 
   .caret-wrapper {
