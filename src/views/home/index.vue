@@ -31,7 +31,7 @@
       <h2>项目概览</h2>
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-statistic title="组件数量" :value="9" />
+          <el-statistic title="组件数量" :value="11" />
         </el-col>
         <el-col :span="6">
           <el-statistic title="页面数量" :value="8" />

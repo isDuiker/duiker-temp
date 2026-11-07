@@ -46,6 +46,12 @@ export const STATIC_ROUTES = [
             meta: { title: "复杂表单" },
             component: () => import("@/views/feature/form/index.vue"),
           },
+          {
+            path: "/feature/chart",
+            name: "chart",
+            meta: { title: "图表示例" },
+            component: () => import("@/views/feature/chart/index.vue"),
+          },
         ],
       },
       // 系统管理
