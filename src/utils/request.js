@@ -44,8 +44,17 @@ request.interceptors.response.use(
 
     const res = response.data;
 
-    // 后端未使用统一响应结构（如纯文本）时直接返回
-    if (!res || typeof res !== "object" || !("code" in res)) {
+    // 后端未使用统一响应结构（如纯文本、数组、业务对象）时直接返回
+    if (!res || typeof res !== "object" || Array.isArray(res)) {
+      return res;
+    }
+
+    // 只有数字型 code 才按统一响应结构处理，避免业务字段 code（如设备编码）被误判
+    const hasBusinessCode =
+      Object.prototype.hasOwnProperty.call(res, "code") &&
+      (typeof res.code === "number" || /^\d+$/.test(String(res.code)));
+
+    if (!hasBusinessCode) {
       return res;
     }
 

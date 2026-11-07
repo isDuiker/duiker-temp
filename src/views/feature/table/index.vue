@@ -93,6 +93,12 @@
 import { reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { Delete, Download, Plus, Upload } from "@element-plus/icons-vue";
+import {
+  createDevice,
+  deleteDevice,
+  deleteDevices,
+  getDeviceList,
+} from "@/api";
 
 const createQuery = () => ({
   name: "",
@@ -116,20 +122,6 @@ function statusLabel(status) {
   return statusMap[status] || "-";
 }
 
-const rows = ref(
-  Array.from({ length: 48 }, (_, index) => ({
-    id: index + 1,
-    name: `设备-${String(index + 1).padStart(2, "0")}`,
-    code: `EQ-${1001 + index}`,
-    status: index % 4 === 0 ? "disabled" : "enabled",
-    owner: ["张伟", "李娜", "王强", "赵敏"][index % 4],
-    date: `2026-${String((index % 12) + 1).padStart(2, "0")}-${String(
-      (index % 27) + 1,
-    ).padStart(2, "0")}`,
-    remark: index % 3 === 0 ? "需要定期维护" : "运行正常",
-  })),
-);
-
 const columns = [
   {
     prop: "name",
@@ -141,20 +133,20 @@ const columns = [
     prop: "code",
     label: "设备编码",
     minWidth: 120,
-    sortable: false,
+    sortable: "custom",
   },
   {
     prop: "status",
     label: "状态",
     minWidth: 110,
     slot: "status",
-    sortable: false,
+    sortable: "custom",
   },
   {
     prop: "owner",
     label: "负责人",
     minWidth: 120,
-    sortable: false,
+    sortable: "custom",
   },
   {
     prop: "date",
@@ -167,62 +159,18 @@ const columns = [
     label: "备注",
     minWidth: 170,
     showOverflowTooltip: true,
-    sortable: false,
+    sortable: "custom",
   },
   {
     prop: "actions",
     label: "操作",
     minWidth: 140,
     slot: "actions",
-    sortable: false,
+    sortable: "custom",
   },
 ];
 
-function compareRows(a, b, params) {
-  const ascFields = String(params.ascs || "")
-    .split(",")
-    .filter(Boolean);
-  const descFields = String(params.descs || "")
-    .split(",")
-    .filter(Boolean);
-
-  const fields = [
-    ...ascFields.map((field) => [field, 1]),
-    ...descFields.map((field) => [field, -1]),
-  ];
-
-  for (const [field, direction] of fields) {
-    const left = a[field];
-    const right = b[field];
-    if (left === right) continue;
-    if (left == null) return 1;
-    if (right == null) return -1;
-    return left > right ? direction : -direction;
-  }
-
-  return 0;
-}
-
-async function getTableData(params = {}) {
-  const filtered = rows.value
-    .filter((row) => !params.status || row.status === params.status)
-    .filter((row) => !params.owner || row.owner.includes(params.owner))
-    .filter((row) => !params.date || row.date === params.date)
-    .filter((row) => !params.remark || row.remark.includes(params.remark))
-    .sort((a, b) => compareRows(a, b, params));
-
-  const current = Number(params.current) || 1;
-  const size = Number(params.size) || 5;
-  const start = (current - 1) * size;
-
-  // 模拟接口请求
-  await new Promise((resolve) => setTimeout(resolve, 150));
-
-  return {
-    records: filtered.slice(start, start + size),
-    total: filtered.length,
-  };
-}
+const getTableData = (params) => getDeviceList(params);
 
 function handleSearch() {
   tableRef.value?.loadTableData();
@@ -241,29 +189,34 @@ function handleSelectionChange(selection) {
   selectedRows.value = selection;
 }
 
-function handleAdd() {
-  const nextId = Math.max(0, ...rows.value.map((row) => row.id)) + 1;
-  rows.value.unshift({
-    id: nextId,
-    name: `设备-${String(nextId).padStart(2, "0")}`,
-    code: `EQ-${1000 + nextId}`,
-    status: "enabled",
-    owner: "张伟",
-    date: new Date().toISOString().slice(0, 10),
-    remark: "新增设备",
-  });
-  tableRef.value?.loadTableData();
-  ElMessage.success("已新增一条示例数据");
+async function handleAdd() {
+  try {
+    await createDevice({
+      name: `新增设备-${Date.now().toString().slice(-4)}`,
+      owner: "张伟",
+      status: "enabled",
+      remark: "新增设备",
+    });
+    tableRef.value?.loadTableData();
+    ElMessage.success("已新增一条设备");
+  } catch (error) {
+    console.error(error);
+  }
 }
 
-function handleBatchDelete() {
+async function handleBatchDelete() {
   if (!selectedRows.value.length) return;
 
-  const ids = new Set(selectedRows.value.map((row) => row.id));
-  rows.value = rows.value.filter((row) => !ids.has(row.id));
-  tableRef.value?.clearSelection();
-  tableRef.value?.loadTableData();
-  ElMessage.success(`已删除 ${ids.size} 条数据`);
+  const ids = selectedRows.value.map((row) => row.id);
+
+  try {
+    await deleteDevices(ids);
+    tableRef.value?.clearSelection();
+    tableRef.value?.loadTableData();
+    ElMessage.success(`已删除 ${ids.length} 条数据`);
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function handleImport() {
@@ -279,9 +232,13 @@ function handleView(row) {
 }
 
 async function handleDelete(row) {
-  rows.value = rows.value.filter((item) => item.id !== row.id);
-  tableRef.value?.loadTableData();
-  ElMessage.success(`已删除：${row.name}`);
+  try {
+    await deleteDevice(row.id);
+    tableRef.value?.loadTableData();
+    ElMessage.success(`已删除：${row.name}`);
+  } catch (error) {
+    console.error(error);
+  }
 }
 </script>
 

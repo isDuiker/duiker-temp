@@ -11,3 +11,4 @@
 
 export { default as request } from "@/utils/request";
 export * from "./user";
+export * from "./device";
