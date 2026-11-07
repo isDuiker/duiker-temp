@@ -27,23 +27,23 @@
 
     <div class="grid-charts">
       <d-chart-box title="基础环形图" border>
-        <d-chart :options="usageOptions" />
+        <d-chart :options="usageOptions" :loading="loading" />
       </d-chart-box>
 
       <d-chart-box title="基础饼图" border>
-        <d-chart :options="gradeOptions" />
+        <d-chart :options="gradeOptions" :loading="loading" />
       </d-chart-box>
 
       <d-chart-box title="多分类饼图" border>
-        <d-chart :options="originOptions" />
+        <d-chart :options="originOptions" :loading="loading" />
       </d-chart-box>
 
       <d-chart-box title="占比环形图" border>
-        <d-chart :options="typeOptions" />
+        <d-chart :options="typeOptions" :loading="loading" />
       </d-chart-box>
 
       <d-chart-box title="基础柱状图" border>
-        <d-chart :options="yearOptions" />
+        <d-chart :options="yearOptions" :loading="loading" />
       </d-chart-box>
 
       <d-chart-box title="面积折线图" border>
@@ -59,15 +59,15 @@
             :clearable="false"
           />
         </template>
-        <d-chart :options="trendOptions" />
+        <d-chart :options="trendOptions" :loading="loading" />
       </d-chart-box>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive } from "vue";
-import { ElMessage } from "element-plus";
+import { computed, onMounted, reactive, ref } from "vue";
+import { getChartOverview } from "@/api";
 
 const createQuery = () => ({
   name: "",
@@ -77,21 +77,35 @@ const createQuery = () => ({
 });
 
 const query = reactive(createQuery());
+const loading = ref(false);
 
 const categoryOptions = [
-  { label: "类别A", value: "A" },
-  { label: "类别B", value: "B" },
-  { label: "类别C", value: "C" },
-  { label: "类别D", value: "D" },
+  { label: "类别A", value: "类别A" },
+  { label: "类别B", value: "类别B" },
+  { label: "类别C", value: "类别C" },
+  { label: "类别D", value: "类别D" },
 ];
 
-// 示例页面暂无接口，实际项目可在查询后调用接口刷新图表数据
+async function loadChartData() {
+  loading.value = true;
+
+  try {
+    const data = await getChartOverview({ ...query });
+    applyChartData(data);
+  } catch (error) {
+    console.error("[chart] 加载图表数据失败:", error);
+  } finally {
+    loading.value = false;
+  }
+}
+
 function handleSearch() {
-  ElMessage.success("查询完成");
+  loadChartData();
 }
 
 function handleReset() {
   Object.assign(query, createQuery());
+  loadChartData();
 }
 
 const CHART_COLORS = [
@@ -117,7 +131,7 @@ const SPLIT_LINE = {
 };
 
 // 基础环形图
-const usageOptions = {
+const usageOptions = reactive({
   color: ["#5470c6", "#a9bdf0"],
   tooltip: {
     trigger: "item",
@@ -166,10 +180,10 @@ const usageOptions = {
       ],
     },
   ],
-};
+});
 
 // 基础饼图
-const gradeOptions = {
+const gradeOptions = reactive({
   color: ["#5470c6", "#2ec7c9", "#ee6666", "#f5a623", "#f6bd16"],
   tooltip: {
     trigger: "item",
@@ -200,10 +214,10 @@ const gradeOptions = {
       ],
     },
   ],
-};
+});
 
 // 多分类饼图
-const originOptions = {
+const originOptions = reactive({
   color: CHART_COLORS,
   tooltip: {
     trigger: "item",
@@ -237,10 +251,10 @@ const originOptions = {
       ],
     },
   ],
-};
+});
 
 // 占比环形图
-const typeOptions = {
+const typeOptions = reactive({
   color: ["#5470c6", "#2ec7c9", "#5ad8a6"],
   tooltip: {
     trigger: "item",
@@ -283,10 +297,10 @@ const typeOptions = {
       ],
     },
   ],
-};
+});
 
 // 基础柱状图
-const yearOptions = {
+const yearOptions = reactive({
   color: ["#5470c6"],
   tooltip: {
     trigger: "axis",
@@ -316,8 +330,6 @@ const yearOptions = {
   yAxis: {
     type: "value",
     name: "单位: 个",
-    max: 3000,
-    interval: 500,
     nameLocation: "end",
     nameGap: 15,
     nameTextStyle: {
@@ -348,16 +360,16 @@ const yearOptions = {
       data: [483, 842, 1766, 1620, 2800, 1200],
     },
   ],
-};
+});
 
-const TREND_DATA = [
+const trendRecords = ref([
   { month: "2025-01", value: 8700 },
   { month: "2025-02", value: 8950 },
   { month: "2025-03", value: 8600 },
   { month: "2025-04", value: 9800 },
   { month: "2025-05", value: 9600 },
   { month: "2025-06", value: 10050 },
-];
+]);
 
 const trendRange = reactive({
   start: "",
@@ -366,7 +378,7 @@ const trendRange = reactive({
 
 // 面积折线图：根据日期范围过滤数据
 const trendOptions = computed(() => {
-  const records = TREND_DATA.filter((item) => {
+  const records = trendRecords.value.filter((item) => {
     if (trendRange.start && item.month < trendRange.start) return false;
     if (trendRange.end && item.month > trendRange.end) return false;
     return true;
@@ -405,8 +417,6 @@ const trendOptions = computed(() => {
     yAxis: {
       type: "value",
       name: "数量(个)",
-      max: 12000,
-      interval: 3000,
       nameLocation: "end",
       nameGap: 15,
       nameTextStyle: {
@@ -453,6 +463,59 @@ const trendOptions = computed(() => {
     ],
   };
 });
+
+function sumValues(items) {
+  return items.reduce(
+    (total, item) => total + (Number(item.value) || 0),
+    0,
+  );
+}
+
+// 将接口数据回填到各个图表
+function applyChartData(data) {
+  if (!data) return;
+
+  const usage = Array.isArray(data.usage) ? data.usage : [];
+  usageOptions.series[0].data = usage;
+  usageOptions.title.text = String(sumValues(usage));
+
+  if (Array.isArray(data.basicPie)) {
+    gradeOptions.series[0].data = data.basicPie;
+  }
+
+  if (Array.isArray(data.multiPie)) {
+    originOptions.series[0].data = data.multiPie;
+  }
+
+  const ratio = Array.isArray(data.ratio) ? data.ratio : [];
+  typeOptions.series[0].data = ratio;
+
+  const ratioTotal = sumValues(ratio);
+  const topItem = ratio.reduce((top, item) => {
+    return Number(item.value) > Number(top?.value ?? -1) ? item : top;
+  }, null);
+
+  typeOptions.title.text =
+    ratioTotal && topItem
+      ? `${Math.round((Number(topItem.value) / ratioTotal) * 100)}%`
+      : "0%";
+  typeOptions.title.subtext = topItem?.name || "";
+
+  const bar = Array.isArray(data.bar) ? data.bar : [];
+  yearOptions.xAxis.data = bar.map((item) => item.name);
+  yearOptions.series[0].data = bar.map(
+    (item) => Number(item.value) || 0,
+  );
+
+  trendRecords.value = (
+    Array.isArray(data.trend) ? data.trend : []
+  ).map((item) => ({
+    month: item.name,
+    value: Number(item.value) || 0,
+  }));
+}
+
+onMounted(loadChartData);
 </script>
 
 <style scoped lang="scss">

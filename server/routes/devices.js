@@ -1,43 +1,24 @@
 const express = require("express");
 const XLSX = require("xlsx");
+const pool = require("../db");
 
 const router = express.Router();
 
-const owners = ["张伟", "李娜", "王强", "赵敏"];
+const SORTABLE_FIELDS = new Set([
+  "id",
+  "name",
+  "code",
+  "status",
+  "owner",
+  "date",
+  "remark",
+]);
 
-// 演示数据，仅保存在内存中；服务重启后会恢复初始数据
-const devices = Array.from({ length: 48 }, (_, index) => {
-  const id = index + 1;
-  return {
-    id,
-    name: `设备-${String(id).padStart(2, "0")}`,
-    code: `EQ-${1000 + id}`,
-    status: index % 4 === 0 ? "disabled" : "enabled",
-    owner: owners[index % 4],
-    date: `2026-${String((index % 12) + 1).padStart(2, "0")}-${String(
-      (index % 27) + 1
-    ).padStart(2, "0")}`,
-    remark: index % 3 === 0 ? "需要定期维护" : "运行正常",
-  };
-});
+const DEVICE_FIELDS = "id, name, code, status, owner, `date`, remark";
 
 function toPositiveInt(value, fallback) {
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? fallback : parsed;
-}
-
-function includesText(value, keyword) {
-  if (!keyword) return true;
-  return String(value ?? "")
-    .toLowerCase()
-    .includes(String(keyword).toLowerCase());
-}
-
-function compareValues(left, right, direction) {
-  if (left === right) return 0;
-  if (left == null) return 1;
-  if (right == null) return -1;
-  return left > right ? direction : -direction;
 }
 
 function getSortFields(query) {
@@ -57,33 +38,62 @@ function getSortFields(query) {
   return fields;
 }
 
-function filterAndSort(query) {
-  const filtered = devices.filter((device) => {
-    return (
-      includesText(device.name, query.name) &&
-      includesText(device.code, query.code) &&
-      (!query.status || device.status === query.status) &&
-      includesText(device.owner, query.owner) &&
-      (!query.date || device.date === query.date) &&
-      (!query.startDate || device.date >= query.startDate) &&
-      (!query.endDate || device.date <= query.endDate) &&
-      includesText(device.remark, query.remark)
+function buildOrderBy(query) {
+  const parts = getSortFields(query)
+    .filter(([field]) => SORTABLE_FIELDS.has(field))
+    .map(
+      ([field, direction]) =>
+        `\`${field}\` ${direction === 1 ? "ASC" : "DESC"}`,
     );
-  });
 
-  const sortFields = getSortFields(query).filter(([field]) =>
-    Object.prototype.hasOwnProperty.call(devices[0] || {}, field)
-  );
+  return parts.length
+    ? `ORDER BY ${parts.join(", ")}`
+    : "ORDER BY `date` DESC, id DESC";
+}
 
-  if (!sortFields.length) return filtered;
+function buildFilters(query) {
+  const conditions = [];
+  const params = [];
 
-  return [...filtered].sort((left, right) => {
-    for (const [field, direction] of sortFields) {
-      const result = compareValues(left[field], right[field], direction);
-      if (result !== 0) return result;
-    }
-    return 0;
-  });
+  if (query.name) {
+    conditions.push("name LIKE ?");
+    params.push(`%${query.name}%`);
+  }
+  if (query.code) {
+    conditions.push("code LIKE ?");
+    params.push(`%${query.code}%`);
+  }
+  if (query.status) {
+    conditions.push("status = ?");
+    params.push(normalizeStatus(query.status));
+  }
+  if (query.owner) {
+    conditions.push("owner LIKE ?");
+    params.push(`%${query.owner}%`);
+  }
+  if (query.date) {
+    conditions.push("`date` = ?");
+    params.push(normalizeDate(query.date));
+  }
+  if (query.startDate) {
+    conditions.push("`date` >= ?");
+    params.push(normalizeDate(query.startDate));
+  }
+  if (query.endDate) {
+    conditions.push("`date` <= ?");
+    params.push(normalizeDate(query.endDate));
+  }
+  if (query.remark) {
+    conditions.push("remark LIKE ?");
+    params.push(`%${query.remark}%`);
+  }
+
+  return {
+    whereSql: conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "",
+    params,
+  };
 }
 
 function normalizeStatus(value) {
@@ -197,47 +207,62 @@ function parseMultipartFile(req) {
   return null;
 }
 
+function sendError(res, error, message) {
+  console.error(`[devices] ${message}:`, error);
+  res.status(500).json({ message });
+}
+
 // 导出设备 Excel
-router.get("/export", (req, res) => {
-  const rows = filterAndSort(req.query);
-  const data = rows.map((device, index) => ({
-    序号: index + 1,
-    设备名称: device.name,
-    设备编码: device.code,
-    状态: device.status === "enabled" ? "启用" : "停用",
-    负责人: device.owner,
-    创建日期: device.date,
-    备注: device.remark,
-  }));
+router.get("/export", async (req, res) => {
+  try {
+    const { whereSql, params } = buildFilters(req.query);
+    const orderSql = buildOrderBy(req.query);
+    const [rows] = await pool.query(
+      `SELECT ${DEVICE_FIELDS} FROM devices ${whereSql} ${orderSql}`,
+      params,
+    );
 
-  const sheet = XLSX.utils.json_to_sheet(data);
-  sheet["!cols"] = [
-    { wch: 8 },
-    { wch: 18 },
-    { wch: 16 },
-    { wch: 10 },
-    { wch: 12 },
-    { wch: 14 },
-    { wch: 28 },
-  ];
+    const data = rows.map((device, index) => ({
+      序号: index + 1,
+      设备名称: device.name,
+      设备编码: device.code,
+      状态: device.status === "enabled" ? "启用" : "停用",
+      负责人: device.owner,
+      创建日期: device.date,
+      备注: device.remark,
+    }));
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, sheet, "设备列表");
+    const sheet = XLSX.utils.json_to_sheet(data);
+    sheet["!cols"] = [
+      { wch: 8 },
+      { wch: 18 },
+      { wch: 16 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 28 },
+    ];
 
-  const buffer = XLSX.write(workbook, {
-    type: "buffer",
-    bookType: "xlsx",
-  });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, sheet, "设备列表");
 
-  res.attachment("devices.xlsx");
-  res.type(
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  );
-  res.send(buffer);
+    const buffer = XLSX.write(workbook, {
+      type: "buffer",
+      bookType: "xlsx",
+    });
+
+    res.attachment("devices.xlsx");
+    res.type(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.send(buffer);
+  } catch (error) {
+    sendError(res, error, "导出失败");
+  }
 });
 
 // 导入设备 Excel
-router.post("/import", (req, res) => {
+router.post("/import", async (req, res) => {
   const content = parseMultipartFile(req);
 
   if (content === null) {
@@ -259,109 +284,204 @@ router.post("/import", (req, res) => {
     return;
   }
 
-  let nextId = devices.reduce((max, item) => Math.max(max, item.id), 0) + 1;
-  const newDevices = imported.map((item) => {
-    const device = { id: nextId, ...item };
-    nextId += 1;
-    return device;
-  });
+  try {
+    const values = imported.map((item) => [
+      item.name,
+      item.code,
+      item.status,
+      item.owner,
+      item.date,
+      item.remark,
+    ]);
 
-  devices.unshift(...newDevices);
-  res.json({ imported: newDevices.length, total: devices.length });
+    const [result] = await pool.query(
+      "INSERT INTO devices (name, code, status, owner, `date`, remark) VALUES ?",
+      [values],
+    );
+
+    const [[{ total }]] = await pool.query(
+      "SELECT COUNT(*) AS total FROM devices",
+    );
+
+    res.json({ imported: result.affectedRows, total });
+  } catch (error) {
+    sendError(res, error, "导入失败");
+  }
 });
 
-
-
 // 分页查询设备列表
-router.get("/", (req, res) => {
-  const current = Math.max(1, toPositiveInt(req.query.current, 1));
-  const size = Math.min(500, Math.max(1, toPositiveInt(req.query.size, 10)));
-  const result = filterAndSort(req.query);
-  const start = (current - 1) * size;
+router.get("/", async (req, res) => {
+  try {
+    const current = Math.max(1, toPositiveInt(req.query.current, 1));
+    const size = Math.min(500, Math.max(1, toPositiveInt(req.query.size, 10)));
+    const start = (current - 1) * size;
 
-  res.json({
-    records: result.slice(start, start + size),
-    total: result.length,
-  });
+    const { whereSql, params } = buildFilters(req.query);
+    const orderSql = buildOrderBy(req.query);
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) AS total FROM devices ${whereSql}`,
+      params,
+    );
+
+    const [records] = await pool.query(
+      `SELECT ${DEVICE_FIELDS} FROM devices ${whereSql} ${orderSql} LIMIT ? OFFSET ?`,
+      [...params, size, start],
+    );
+
+    res.json({ records, total });
+  } catch (error) {
+    sendError(res, error, "查询设备列表失败");
+  }
 });
 
 // 新增设备
-router.post("/", (req, res) => {
-  const body = req.body || {};
-  const id = devices.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+router.post("/", async (req, res) => {
+  try {
+    const body = req.body || {};
+    const values = [
+      body.name || "新设备",
+      body.code || `EQ-${Date.now().toString().slice(-6)}`,
+      normalizeStatus(body.status),
+      body.owner || "未知",
+      normalizeDate(body.date),
+      body.remark || "",
+    ];
 
-  const device = {
-    id,
-    name: body.name || `设备-${String(id).padStart(2, "0")}`,
-    code: body.code || `EQ-${1000 + id}`,
-    status: body.status === "disabled" ? "disabled" : "enabled",
-    owner: body.owner || "张伟",
-    date: body.date || new Date().toISOString().slice(0, 10),
-    remark: body.remark || "新增设备",
-  };
+    const [result] = await pool.query(
+      "INSERT INTO devices (name, code, status, owner, `date`, remark) VALUES (?, ?, ?, ?, ?, ?)",
+      values,
+    );
 
-  devices.unshift(device);
-  res.status(201).json(device);
+    const [rows] = await pool.query(
+      `SELECT ${DEVICE_FIELDS} FROM devices WHERE id = ?`,
+      [result.insertId],
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    sendError(res, error, "新增设备失败");
+  }
 });
 
 // 更新设备
-router.put("/:id", (req, res) => {
-  const id = toPositiveInt(req.params.id, 0);
-  const device = devices.find((item) => item.id === id);
+router.put("/:id", async (req, res) => {
+  try {
+    const id = toPositiveInt(req.params.id, 0);
 
-  if (!device) {
-    res.status(404).json({ message: "设备不存在" });
-    return;
+    if (!id) {
+      res.status(400).json({ message: "设备 ID 无效" });
+      return;
+    }
+
+    const [existing] = await pool.query(
+      "SELECT id FROM devices WHERE id = ?",
+      [id],
+    );
+
+    if (!existing.length) {
+      res.status(404).json({ message: "设备不存在" });
+      return;
+    }
+
+    const body = req.body || {};
+    const fields = [];
+    const params = [];
+
+    if (body.name !== undefined) {
+      fields.push("name = ?");
+      params.push(body.name);
+    }
+    if (body.code !== undefined) {
+      fields.push("code = ?");
+      params.push(body.code);
+    }
+    if (body.status !== undefined) {
+      fields.push("status = ?");
+      params.push(normalizeStatus(body.status));
+    }
+    if (body.owner !== undefined) {
+      fields.push("owner = ?");
+      params.push(body.owner);
+    }
+    if (body.date !== undefined) {
+      fields.push("`date` = ?");
+      params.push(normalizeDate(body.date));
+    }
+    if (body.remark !== undefined) {
+      fields.push("remark = ?");
+      params.push(body.remark);
+    }
+
+    if (fields.length) {
+      params.push(id);
+      await pool.query(
+        `UPDATE devices SET ${fields.join(", ")} WHERE id = ?`,
+        params,
+      );
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ${DEVICE_FIELDS} FROM devices WHERE id = ?`,
+      [id],
+    );
+
+    res.json(rows[0]);
+  } catch (error) {
+    sendError(res, error, "更新设备失败");
   }
-
-  const body = req.body || {};
-  if (body.name !== undefined) device.name = body.name;
-  if (body.code !== undefined) device.code = body.code;
-  if (body.status !== undefined) {
-    device.status = body.status === "disabled" ? "disabled" : "enabled";
-  }
-  if (body.owner !== undefined) device.owner = body.owner;
-  if (body.date !== undefined) device.date = body.date;
-  if (body.remark !== undefined) device.remark = body.remark;
-
-  res.json(device);
 });
 
 // 批量删除设备
-router.post("/batch-delete", (req, res) => {
-  const ids = new Set(
-    (Array.isArray(req.body?.ids) ? req.body.ids : []).map((id) =>
-      Number.parseInt(id, 10)
-    )
-  );
+router.post("/batch-delete", async (req, res) => {
+  const ids = [
+    ...new Set(
+      (Array.isArray(req.body?.ids) ? req.body.ids : [])
+        .map((id) => Number.parseInt(id, 10))
+        .filter((id) => Number.isInteger(id) && id > 0),
+    ),
+  ];
 
-  if (!ids.size) {
+  if (!ids.length) {
     res.status(400).json({ message: "请选择要删除的设备" });
     return;
   }
 
-  const before = devices.length;
-  for (let index = devices.length - 1; index >= 0; index -= 1) {
-    if (ids.has(devices[index].id)) {
-      devices.splice(index, 1);
-    }
+  try {
+    const [result] = await pool.query(
+      "DELETE FROM devices WHERE id IN (?)",
+      [ids],
+    );
+    res.json({ deleted: result.affectedRows });
+  } catch (error) {
+    sendError(res, error, "批量删除设备失败");
   }
-
-  res.json({ deleted: before - devices.length });
 });
 
 // 删除单个设备
-router.delete("/:id", (req, res) => {
-  const id = toPositiveInt(req.params.id, 0);
-  const index = devices.findIndex((item) => item.id === id);
+router.delete("/:id", async (req, res) => {
+  try {
+    const id = toPositiveInt(req.params.id, 0);
 
-  if (index === -1) {
-    res.status(404).json({ message: "设备不存在" });
-    return;
+    if (!id) {
+      res.status(400).json({ message: "设备 ID 无效" });
+      return;
+    }
+
+    const [result] = await pool.query(
+      "DELETE FROM devices WHERE id = ?",
+      [id],
+    );
+
+    if (!result.affectedRows) {
+      res.status(404).json({ message: "设备不存在" });
+      return;
+    }
+
+    res.json({ success: true, id });
+  } catch (error) {
+    sendError(res, error, "删除设备失败");
   }
-
-  devices.splice(index, 1);
-  res.json({ success: true, id });
 });
 
 module.exports = router;

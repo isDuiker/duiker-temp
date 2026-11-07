@@ -4,9 +4,13 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+// 加载 server/.env，确保 PORT 和数据库配置在启动时生效
+require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var devicesRouter = require('./routes/devices');
+var chartsRouter = require('./routes/charts');
 
 var app = express();
 
@@ -41,6 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/devices', devicesRouter);
+app.use('/charts', chartsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
