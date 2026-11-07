@@ -4,7 +4,6 @@
     :auto-query="false"
     @submit="handleSearch"
     @reset="handleReset"
-    @resize="handleQueryResize"
   >
     <el-form-item label="名称">
       <el-input v-model="query.name" placeholder="请输入名称" />
@@ -55,7 +54,7 @@
     </template>
 
     <template #toolbar>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">
+      <el-button type="primary" :icon="Plus" @click="openCreateDialog">
         新增
       </el-button>
       <el-button
@@ -63,7 +62,7 @@
         plain
         :icon="Delete"
         :disabled="selectedRows.length === 0"
-        @click="handleBatchDelete"
+        @click="openBatchDeleteDialog"
       >
         删除
       </el-button>
@@ -81,23 +80,103 @@
     </template>
 
     <template #actions="{ row }">
-      <el-button link type="primary" @click="handleView(row)"> 查看 </el-button>
-      <el-button link type="danger" @click="handleDelete(row)">
+      <el-button link type="primary" @click="openEditDialog(row)">
+        编辑
+      </el-button>
+      <el-button link type="danger" @click="openDeleteDialog(row)">
         删除
       </el-button>
     </template>
   </d-table>
+
+  <d-dialog
+    v-model="formDialogVisible"
+    :title="isEditing ? '编辑设备' : '新增设备'"
+    width="560px"
+    destroy-on-close
+    @closed="resetDeviceForm"
+  >
+    <el-form
+      ref="deviceFormRef"
+      :model="deviceForm"
+      :rules="deviceRules"
+      label-width="90px"
+      label-position="left"
+      @submit.prevent
+    >
+      <el-form-item label="设备名称" prop="name">
+        <el-input v-model="deviceForm.name" placeholder="请输入设备名称" />
+      </el-form-item>
+      <el-form-item label="设备编码" prop="code">
+        <el-input v-model="deviceForm.code" placeholder="请输入设备编码" />
+      </el-form-item>
+      <el-form-item label="负责人" prop="owner">
+        <el-input v-model="deviceForm.owner" placeholder="请输入负责人" />
+      </el-form-item>
+      <el-form-item label="状态" prop="status">
+        <el-select v-model="deviceForm.status" style="width: 100%">
+          <el-option label="启用" value="enabled" />
+          <el-option label="停用" value="disabled" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="备注" prop="remark">
+        <el-input
+          v-model="deviceForm.remark"
+          type="textarea"
+          :rows="4"
+          placeholder="请输入备注"
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="formDialogVisible = false">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="handleDeviceSubmit">
+        确定
+      </el-button>
+    </template>
+  </d-dialog>
+
+  <d-dialog
+    v-model="deleteDialogVisible"
+    title="删除确认"
+    width="420px"
+    :resizable="false"
+    @closed="resetPendingDeleteIds"
+  >
+    <div class="delete-confirm">
+      <el-icon :size="22"><WarningFilled /></el-icon>
+      <span>{{ deleteConfirmText }}</span>
+    </div>
+
+    <template #footer>
+      <el-button @click="deleteDialogVisible = false">取消</el-button>
+      <el-button
+        type="danger"
+        :loading="deleting"
+        @click="confirmDelete"
+      >
+        确定删除
+      </el-button>
+    </template>
+  </d-dialog>
 </template>
 
 <script setup>
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
-import { Delete, Download, Plus, Upload } from "@element-plus/icons-vue";
+import {
+  Delete,
+  Download,
+  Plus,
+  Upload,
+  WarningFilled,
+} from "@element-plus/icons-vue";
 import {
   createDevice,
-  deleteDevice,
   deleteDevices,
   getDeviceList,
+  updateDevice,
 } from "@/api";
 
 const createQuery = () => ({
@@ -121,6 +200,36 @@ const statusMap = {
 function statusLabel(status) {
   return statusMap[status] || "-";
 }
+
+const createDeviceForm = () => ({
+  name: "",
+  code: "",
+  owner: "",
+  status: "enabled",
+  remark: "",
+});
+
+const formDialogVisible = ref(false);
+const deviceFormRef = ref(null);
+const deviceForm = reactive(createDeviceForm());
+const editingId = ref(null);
+const saving = ref(false);
+const isEditing = computed(() => editingId.value !== null);
+
+const deviceRules = {
+  name: [{ required: true, message: "请输入设备名称", trigger: "blur" }],
+  code: [{ required: true, message: "请输入设备编码", trigger: "blur" }],
+  owner: [{ required: true, message: "请输入负责人", trigger: "blur" }],
+};
+
+const deleteDialogVisible = ref(false);
+const pendingDeleteIds = ref([]);
+const deleting = ref(false);
+const deleteConfirmText = computed(() =>
+  pendingDeleteIds.value.length > 1
+    ? `确定删除已选中的 ${pendingDeleteIds.value.length} 条设备数据吗？`
+    : "确定删除该设备数据吗？"
+);
 
 const columns = [
   {
@@ -161,13 +270,6 @@ const columns = [
     showOverflowTooltip: true,
     sortable: "custom",
   },
-  {
-    prop: "actions",
-    label: "操作",
-    minWidth: 140,
-    slot: "actions",
-    sortable: "custom",
-  },
 ];
 
 const getTableData = (params) => getDeviceList(params);
@@ -181,41 +283,95 @@ function handleReset() {
   tableRef.value?.loadTableData();
 }
 
-function handleQueryResize() {
-  tableRef.value?.resize();
-}
-
 function handleSelectionChange(selection) {
   selectedRows.value = selection;
 }
 
-async function handleAdd() {
+function openCreateDialog() {
+  editingId.value = null;
+  Object.assign(deviceForm, createDeviceForm());
+  formDialogVisible.value = true;
+}
+
+function openEditDialog(row) {
+  editingId.value = row.id;
+  Object.assign(deviceForm, {
+    name: row.name || "",
+    code: row.code || "",
+    owner: row.owner || "",
+    status: row.status || "enabled",
+    remark: row.remark || "",
+  });
+  formDialogVisible.value = true;
+}
+
+function resetDeviceForm() {
+  editingId.value = null;
+  Object.assign(deviceForm, createDeviceForm());
+  deviceFormRef.value?.clearValidate?.();
+}
+
+async function handleDeviceSubmit() {
+  if (!deviceFormRef.value) return;
+
   try {
-    await createDevice({
-      name: `新增设备-${Date.now().toString().slice(-4)}`,
-      owner: "张伟",
-      status: "enabled",
-      remark: "新增设备",
-    });
+    await deviceFormRef.value.validate();
+  } catch {
+    return;
+  }
+
+  saving.value = true;
+
+  try {
+    if (editingId.value !== null) {
+      await updateDevice(editingId.value, { ...deviceForm });
+      ElMessage.success("设备信息已更新");
+    } else {
+      await createDevice({ ...deviceForm });
+      ElMessage.success("设备已新增");
+    }
+
+    formDialogVisible.value = false;
     tableRef.value?.loadTableData();
-    ElMessage.success("已新增一条设备");
   } catch (error) {
     console.error(error);
+  } finally {
+    saving.value = false;
   }
 }
 
-async function handleBatchDelete() {
+function openBatchDeleteDialog() {
   if (!selectedRows.value.length) return;
 
-  const ids = selectedRows.value.map((row) => row.id);
+  pendingDeleteIds.value = selectedRows.value.map((row) => row.id);
+  deleteDialogVisible.value = true;
+}
+
+function openDeleteDialog(row) {
+  pendingDeleteIds.value = [row.id];
+  deleteDialogVisible.value = true;
+}
+
+function resetPendingDeleteIds() {
+  pendingDeleteIds.value = [];
+}
+
+async function confirmDelete() {
+  if (!pendingDeleteIds.value.length) return;
+
+  deleting.value = true;
 
   try {
-    await deleteDevices(ids);
+    const count = pendingDeleteIds.value.length;
+    await deleteDevices(pendingDeleteIds.value);
     tableRef.value?.clearSelection();
     tableRef.value?.loadTableData();
-    ElMessage.success(`已删除 ${ids.length} 条数据`);
+    deleteDialogVisible.value = false;
+    ElMessage.success(`已删除 ${count} 条数据`);
   } catch (error) {
     console.error(error);
+  } finally {
+    deleting.value = false;
   }
 }
 
@@ -225,20 +381,6 @@ function handleImport() {
 
 function handleExport() {
   ElMessage.info("导出按钮示例：可接入导出接口");
-}
-
-function handleView(row) {
-  ElMessage.info(`查看：${row.name}`);
-}
-
-async function handleDelete(row) {
-  try {
-    await deleteDevice(row.id);
-    tableRef.value?.loadTableData();
-    ElMessage.success(`已删除：${row.name}`);
-  } catch (error) {
-    console.error(error);
-  }
 }
 </script>
 
@@ -253,5 +395,19 @@ async function handleDelete(row) {
 .table-selected {
   color: var(--app-text-secondary);
   font-size: 12px;
+}
+
+.delete-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--app-text);
+  line-height: 1.6;
+
+  .el-icon {
+    flex: none;
+    margin-top: 2px;
+    color: var(--el-color-warning);
+  }
 }
 </style>

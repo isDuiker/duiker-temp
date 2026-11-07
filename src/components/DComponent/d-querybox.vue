@@ -64,6 +64,7 @@ import {
 } from "vue";
 import { ArrowDown, ArrowUp } from "@element-plus/icons-vue";
 import { ElInput } from "element-plus";
+import { QUERYBOX_RESIZE_EVENT } from "./layoutEvents";
 
 defineOptions({
   name: "d-querybox",
@@ -158,6 +159,11 @@ const SlotClearableWrapper = {
   },
 };
 
+function notifyResize() {
+  emit("resize");
+  window.dispatchEvent(new CustomEvent(QUERYBOX_RESIZE_EVENT));
+}
+
 function checkNeedExpand() {
   nextTick(() => {
     const wrapper = contentWrapper.value;
@@ -172,7 +178,7 @@ function checkNeedExpand() {
 
     if (height !== lastWrapperHeight) {
       lastWrapperHeight = height;
-      if (height > 0) emit("resize");
+      if (height > 0) notifyResize();
     }
 
     // 超过一行（第一行高度 + 行间距）时显示展开按钮
@@ -182,7 +188,7 @@ function checkNeedExpand() {
 
 function toggle() {
   collapsed.value = !collapsed.value;
-  emit("resize");
+  nextTick(notifyResize);
 }
 
 function handleGlobalKeydown(event) {

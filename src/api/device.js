@@ -17,6 +17,15 @@ export function createDevice(data) {
 }
 
 /**
+ * 更新设备
+ * @param {string|number} id 设备 ID
+ * @param {Object} data 设备信息
+ */
+export function updateDevice(id, data) {
+  return request.put(`/devices/${id}`, data);
+}
+
+/**
  * 删除单个设备
  * @param {string|number} id 设备 ID
  */

@@ -115,6 +115,29 @@ router.post("/", (req, res) => {
   res.status(201).json(device);
 });
 
+// 更新设备
+router.put("/:id", (req, res) => {
+  const id = toPositiveInt(req.params.id, 0);
+  const device = devices.find((item) => item.id === id);
+
+  if (!device) {
+    res.status(404).json({ message: "设备不存在" });
+    return;
+  }
+
+  const body = req.body || {};
+  if (body.name !== undefined) device.name = body.name;
+  if (body.code !== undefined) device.code = body.code;
+  if (body.status !== undefined) {
+    device.status = body.status === "disabled" ? "disabled" : "enabled";
+  }
+  if (body.owner !== undefined) device.owner = body.owner;
+  if (body.date !== undefined) device.date = body.date;
+  if (body.remark !== undefined) device.remark = body.remark;
+
+  res.json(device);
+});
+
 // 批量删除设备
 router.post("/batch-delete", (req, res) => {
   const ids = new Set(

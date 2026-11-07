@@ -18,7 +18,8 @@
           popper-class="d-table-column-popper"
         >
           <template #reference>
-            <el-button text :icon="Setting">列设置</el-button>
+            <!-- <el-button text :icon="Setting">列设置</el-button> -->
+            <el-button :icon="Setting"></el-button>
           </template>
 
           <div class="d-table-column-panel">
@@ -147,6 +148,24 @@
         </el-table-column>
 
         <slot />
+
+        <el-table-column
+          v-if="$slots.actions"
+          :label="actionsLabel"
+          :width="actionsWidth"
+          :align="actionsAlign"
+          :fixed="actionsFixed"
+          class-name="d-table__actions-column"
+        >
+          <template #default="{ row, column, $index }">
+            <slot
+              name="actions"
+              :row="row"
+              :column="column"
+              :$index="$index"
+            />
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -195,6 +214,7 @@ import {
 import { ElLoading, ElMessage } from "element-plus";
 import "element-plus/es/components/message/style/css";
 import "element-plus/es/components/loading/style/css";
+import { QUERYBOX_RESIZE_EVENT } from "./layoutEvents";
 
 defineOptions({
   name: "d-table",
@@ -277,6 +297,22 @@ const props = defineProps({
   defaultAlign: {
     type: String,
     default: "center",
+  },
+  actionsLabel: {
+    type: String,
+    default: "操作",
+  },
+  actionsWidth: {
+    type: [String, Number],
+    default: 140,
+  },
+  actionsAlign: {
+    type: String,
+    default: "center",
+  },
+  actionsFixed: {
+    type: [Boolean, String],
+    default: "right",
   },
   pageSize: {
     type: Number,
@@ -774,12 +810,14 @@ function scheduleHeightCalculation(delay = 300) {
 }
 
 const debouncedCalculateHeight = debounce(calculateHeight, 200);
+const debouncedQueryboxResize = debounce(resizeTable, 80);
 
 onMounted(() => {
   nextTick(() => {
     calculateHeight();
     scheduleHeightCalculation();
     window.addEventListener("resize", debouncedCalculateHeight);
+    window.addEventListener(QUERYBOX_RESIZE_EVENT, debouncedQueryboxResize);
     if (props.immediate) {
       loadTableData();
     }
@@ -788,8 +826,13 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", debouncedCalculateHeight);
+  window.removeEventListener(QUERYBOX_RESIZE_EVENT, debouncedQueryboxResize);
   if (heightTimer) clearTimeout(heightTimer);
 });
+
+function resizeTable() {
+  nextTick(calculateHeight);
+}
 
 defineExpose({
   loadTableData,
@@ -797,7 +840,7 @@ defineExpose({
   clearTable,
   setCurrentRow,
   clearSelection: handleClearSelection,
-  resize: calculateHeight,
+  resize: resizeTable,
   resetColumns,
   getTableRef: () => tableRef.value,
   getSelectedRows: () => selectedRows.value,

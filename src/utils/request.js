@@ -28,7 +28,7 @@ request.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // 响应拦截器
@@ -49,10 +49,14 @@ request.interceptors.response.use(
       return res;
     }
 
-    // 只有数字型 code 才按统一响应结构处理，避免业务字段 code（如设备编码）被误判
+    // 只有同时具备数字型 code 和 data/msg/message 字段时，才按统一响应结构处理，
+    // 避免业务数据里的 code 字段（例如设备编码为 "1"）被误判为业务状态码。
     const hasBusinessCode =
       Object.prototype.hasOwnProperty.call(res, "code") &&
-      (typeof res.code === "number" || /^\d+$/.test(String(res.code)));
+      (typeof res.code === "number" || /^\d+$/.test(String(res.code))) &&
+      (Object.prototype.hasOwnProperty.call(res, "data") ||
+        Object.prototype.hasOwnProperty.call(res, "msg") ||
+        Object.prototype.hasOwnProperty.call(res, "message"));
 
     if (!hasBusinessCode) {
       return res;
@@ -60,7 +64,8 @@ request.interceptors.response.use(
 
     const code = Number(res.code);
     // 兼容 code 为 200 或 0 的成功约定
-    if (code === 200 || code === 0) {
+    // if (code === 200 || code === 0) {
+    if ((code >= 200 && code < 300) || code === 0) {
       return res.data;
     }
 
@@ -92,7 +97,10 @@ request.interceptors.response.use(
         504: "网关超时",
       };
       message =
-        data?.msg || data?.message || statusMessages[status] || `请求失败（${status}）`;
+        data?.msg ||
+        data?.message ||
+        statusMessages[status] ||
+        `请求失败（${status}）`;
 
       if (status === 401) {
         handleUnauthorized();
@@ -106,7 +114,7 @@ request.interceptors.response.use(
 
     ElMessage.error(message);
     return Promise.reject(error);
-  }
+  },
 );
 
 // 统一处理登录失效
@@ -114,7 +122,7 @@ function handleUnauthorized() {
   localStorage.removeItem(TOKEN_KEY);
   if (window.location.pathname !== "/login") {
     const redirect = encodeURIComponent(
-      window.location.pathname + window.location.search
+      window.location.pathname + window.location.search,
     );
     window.location.href = `/login?redirect=${redirect}`;
   }
