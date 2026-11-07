@@ -73,6 +73,11 @@ function handleUserCommand(command) {
     </div>
 
     <div class="header-actions">
+      <router-link class="workbench-entry" :to="{ name: 'home' }">
+        <el-icon :size="16"><Bell /></el-icon>
+        <span>工作台</span>
+      </router-link>
+      
       <button
         class="icon-button"
         type="button"
@@ -84,11 +89,6 @@ function handleUserCommand(command) {
           <component :is="themeIcon" />
         </el-icon>
       </button>
-
-      <router-link class="workbench-entry" :to="{ name: 'home' }">
-        <el-icon :size="16"><Bell /></el-icon>
-        <span>工作台</span>
-      </router-link>
 
       <el-dropdown trigger="click" @command="handleUserCommand">
         <button class="user-trigger" type="button" aria-label="账号菜单">

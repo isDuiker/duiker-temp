@@ -31,13 +31,13 @@
       <h2>项目概览</h2>
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-statistic title="组件数量" :value="12" />
+          <el-statistic title="组件数量" :value="9" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="页面数量" :value="5" />
+          <el-statistic title="页面数量" :value="8" />
         </el-col>
         <el-col :span="6">
-          <el-statistic title="样式文件" :value="8" suffix="个" />
+          <el-statistic title="样式文件" :value="4" suffix="个" />
         </el-col>
         <el-col :span="6">
           <el-statistic title="当前版本" value="v1.0.0" />
