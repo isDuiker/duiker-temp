@@ -165,8 +165,9 @@ function checkNeedExpand() {
 
     const height = wrapper.offsetHeight;
     const firstItem = wrapper.querySelector(".el-form-item");
+    const firstItemHeight = firstItem?.offsetHeight || 32;
     if (firstItem) {
-      collapsedHeight.value = firstItem.offsetHeight;
+      collapsedHeight.value = firstItemHeight;
     }
 
     if (height !== lastWrapperHeight) {
@@ -174,7 +175,8 @@ function checkNeedExpand() {
       if (height > 0) emit("resize");
     }
 
-    canExpand.value = height > 70;
+    // 超过一行（第一行高度 + 行间距）时显示展开按钮
+    canExpand.value = height > firstItemHeight + 8;
   });
 }
 
@@ -333,9 +335,13 @@ defineExpose({
   margin-bottom: 8px;
 }
 
-/* 最后一项去掉底部外边距，避免无展开按钮时上下留白不一致 */
+/* 查询项之间保留纵向间距，最后一项不保留，避免下方多余留白 */
 :deep(.query-content-wrapper > .el-form-item) {
-  margin-bottom: 0px;
+  margin-bottom: 8px;
+}
+
+:deep(.query-content-wrapper > .el-form-item:last-child) {
+  margin-bottom: 0;
 }
 
 /* 操作按钮所在表单项参与行内垂直居中，不保留底部外边距 */

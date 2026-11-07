@@ -26,18 +26,18 @@ export const STATIC_ROUTES = [
         component: () =>
           import(/* webpackChunkName: "views" */ "@/views/login/index.vue"),
       },
-      // 通用组件
+      // 组件示例
       {
         path: "/feature",
         name: "feature",
         component: RouterView,
         redirect: "/feature/table",
-        meta: { title: "通用组件" },
+        meta: { title: "组件示例" },
         children: [
           {
             path: "/feature/table",
             name: "table",
-            meta: { title: "通用表格" },
+            meta: { title: "通用页面" },
             component: () => import("@/views/feature/table/index.vue"),
           },
           {
