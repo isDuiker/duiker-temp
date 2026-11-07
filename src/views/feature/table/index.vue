@@ -25,11 +25,10 @@
       <el-input v-model="query.owner" placeholder="请输入负责人" />
     </el-form-item>
     <el-form-item label="创建日期">
-      <el-date-picker
-        v-model="query.date"
-        type="date"
-        value-format="YYYY-MM-DD"
-        placeholder="请选择日期"
+      <d-datetime-select
+        v-model:startDate="query.startDate"
+        v-model:endDate="query.endDate"
+        width="320px"
       />
     </el-form-item>
     <el-form-item label="备注">
@@ -199,7 +198,8 @@ const createQuery = () => ({
   code: "",
   status: "",
   owner: "",
-  date: "",
+  startDate: "",
+  endDate: "",
   remark: "",
 });
 

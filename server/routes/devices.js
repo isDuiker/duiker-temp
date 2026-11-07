@@ -65,6 +65,8 @@ function filterAndSort(query) {
       (!query.status || device.status === query.status) &&
       includesText(device.owner, query.owner) &&
       (!query.date || device.date === query.date) &&
+      (!query.startDate || device.date >= query.startDate) &&
+      (!query.endDate || device.date <= query.endDate) &&
       includesText(device.remark, query.remark)
     );
   });

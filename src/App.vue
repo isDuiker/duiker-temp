@@ -1,5 +1,6 @@
 <script setup>
 import { onBeforeUnmount, onMounted } from "vue";
+import zhCn from "element-plus/es/locale/lang/zh-cn";
 import { THEME_KEY, useThemeStore } from "@/stores/theme";
 
 const themeStore = useThemeStore();
@@ -25,9 +26,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="app-container w-screen h-screen">
-    <router-view />
-  </div>
+  <el-config-provider :locale="zhCn">
+    <div class="app-container w-screen h-screen">
+      <router-view />
+    </div>
+  </el-config-provider>
 </template>
 
 <style scoped lang="scss">
