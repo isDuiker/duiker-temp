@@ -190,6 +190,7 @@ queryboxRef.value?.getFormRef();
 - 输入框内按回车会触发 `submit`
 - 自动为插槽中的 `el-input` 注入 `clearable`
 - 自动处理输入内容首尾空格
+- 查询项中的输入框、下拉框默认统一为 `200px` 宽，日期组件由自身的 `width` 控制
 - 高度变化会派发 `QUERYBOX_RESIZE_EVENT`，`d-table` 会自动监听并重新计算高度
 
 ---

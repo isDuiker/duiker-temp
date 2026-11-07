@@ -16,7 +16,6 @@
         v-model="query.status"
         :option-list="statusOptions"
         placeholder="请选择状态"
-        style="width: 200px"
       />
     </el-form-item>
     <el-form-item label="负责人">

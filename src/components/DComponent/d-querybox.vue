@@ -351,11 +351,10 @@ defineExpose({
   margin-bottom: 0;
 }
 
-:deep(.el-input--small .el-input__inner) {
-  width: 200px;
-}
-
-:deep(.el-date-editor.el-input) {
-  width: 200px;
+/* 查询控件统一宽度，日期组件由自身的 width 控制 */
+:deep(.query-content-wrapper .el-input:not(.el-date-editor)),
+:deep(.query-content-wrapper .el-select),
+:deep(.query-content-wrapper .d-query-select) {
+  width: 220px;
 }
 </style>
