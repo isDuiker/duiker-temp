@@ -7,8 +7,10 @@ export default defineConfig(
     {
       title: "FrontendDocs",
       description: "前端文档站",
-      srcDir: "src",
+      base: '/docs/',
+      outDir: '../dist/docs',
       cleanUrls: true,
+      srcDir: "src",
       themeConfig: {
         // https://vitepress.dev/reference/default-theme-config
         nav: [
